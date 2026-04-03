@@ -43,9 +43,13 @@ export function isWithinSearchArea(place: Pick<Place, "latitude" | "longitude">,
   );
 }
 
-function toScopedPlace(place: Place, center: SearchCenter): Place | null {
+function toScopedPlace(place: Place, center: SearchCenter, intent: ParsedIntent): Place | null {
   const withinSearchArea = isWithinSearchArea(place, center);
   if (!withinSearchArea || !allowedCategories.has(place.category)) {
+    return null;
+  }
+
+  if (intent.wantsInstagram && !place.instagramUrl) {
     return null;
   }
 
@@ -58,9 +62,9 @@ function toScopedPlace(place: Place, center: SearchCenter): Place | null {
 
 export async function searchNearbyPlaces(
   center: SearchCenter,
-  _intent: ParsedIntent,
+  intent: ParsedIntent,
 ): Promise<Place[]> {
   return mockPlaces
-    .map((place) => toScopedPlace(place, center))
+    .map((place) => toScopedPlace(place, center, intent))
     .filter((place): place is Place => place !== null);
 }

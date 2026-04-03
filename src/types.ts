@@ -32,6 +32,7 @@ export type ParsedIntent = {
   vibeNotes: string[];
   wantsRoastery: boolean;
   wantsWorkFriendly: boolean;
+  wantsInstagram: boolean;
   keywords: string[];
 };
 
