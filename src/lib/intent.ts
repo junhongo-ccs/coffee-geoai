@@ -21,10 +21,16 @@ const rules: IntentRule[] = [
     keywords: ["atmosphere", "cozy"],
   },
   {
-    pattern: /(作業|勉強|PC|仕事|長居|電源|Wi-?Fi)/i,
+    pattern: /(作業|勉強|PC|仕事|電源|Wi-?Fi)/i,
     tags: ["study", "spacious", "quiet"],
     notes: ["作業しやすさを重視"],
     keywords: ["work friendly", "study cafe"],
+  },
+  {
+    pattern: /(喫茶|純喫茶|ケーキセット|ジャズ|長居|ゆったり|クラシック)/,
+    tags: ["quiet", "cozy", "sweet", "atmosphere"],
+    notes: ["喫茶店らしい滞在感を重視"],
+    keywords: ["kissaten", "cake set", "relaxing cafe"],
   },
   {
     pattern: /(豆|焙煎|ロースタ|浅煎り|深煎り|スペシャルティ)/,

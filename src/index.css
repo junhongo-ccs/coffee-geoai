@@ -27,6 +27,16 @@ textarea {
   font: inherit;
 }
 
-.esri-view .esri-ui {
-  z-index: 1;
+textarea {
+  resize: vertical;
+}
+
+.maplibregl-map,
+.maplibregl-canvas,
+.maplibregl-canvas-container {
+  max-width: 100%;
+}
+
+.maplibregl-canvas-container {
+  overflow: hidden;
 }

@@ -53,6 +53,18 @@ export function rankPlaces(
       let score = 50;
       const whyThisPlace: string[] = [];
 
+      if (place.isWithinSearchArea) {
+        score += 8;
+        whyThisPlace.push("自由が丘の対象範囲内に収まる");
+      }
+
+      if (place.category === "bean_store") {
+        whyThisPlace.push("豆購入目的にも対応できる候補");
+      } else if (place.category === "both") {
+        score += 6;
+        whyThisPlace.push("カフェ利用と豆購入の両方に対応");
+      }
+
       for (const tag of intent.tags) {
         if (place.tags.includes(tag)) {
           score += tagWeights[tag] ?? 8;
@@ -80,7 +92,7 @@ export function rankPlaces(
       return {
         ...place,
         distanceMeters,
-        spatialReason: formatDistance(distanceMeters),
+        spatialReason: formatDistance(distanceMeters, place.isWithinSearchArea),
         score,
         whyThisPlace: whyThisPlace.slice(0, 3),
       };
@@ -88,12 +100,14 @@ export function rankPlaces(
     .sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
 }
 
-export function formatDistance(distanceMeters: number): string {
+export function formatDistance(distanceMeters: number, isWithinSearchArea?: boolean): string {
   if (distanceMeters < 1000) {
-    return `中心地から約${Math.round(distanceMeters)}m`;
+    return `${isWithinSearchArea ? "自由が丘中心から" : "中心地から"}約${Math.round(distanceMeters)}m`;
   }
 
-  return `中心地から約${(distanceMeters / 1000).toFixed(1)}km`;
+  return `${isWithinSearchArea ? "自由が丘中心から" : "中心地から"}約${(
+    distanceMeters / 1000
+  ).toFixed(1)}km`;
 }
 
 export function tagLabel(tag: string): string {

@@ -10,12 +10,19 @@ export type PlaceTag =
   | "morning"
   | "terrace";
 
-export type PlaceSource = "mock" | "arcgis";
+export type PlaceSource = "curated";
+
+export type VenueCategory = "coffee_shop" | "bean_store" | "both";
+
+export type RecommendationMode = "gis_rule_based";
 
 export type SearchCenter = {
+  id?: string;
   latitude: number;
   longitude: number;
   label: string;
+  radiusMeters?: number;
+  ward?: string;
 };
 
 export type ParsedIntent = {
@@ -34,7 +41,11 @@ export type Place = {
   latitude: number;
   longitude: number;
   address: string;
+  instagramHandle?: string;
+  instagramUrl?: string;
   source: PlaceSource;
+  category: VenueCategory;
+  isWithinSearchArea?: boolean;
   distanceMeters?: number;
   tags: PlaceTag[];
   description: string;
@@ -42,4 +53,5 @@ export type Place = {
   spatialReason?: string;
   score?: number;
   whyThisPlace?: string[];
+  recommendationMode?: RecommendationMode;
 };
