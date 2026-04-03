@@ -12,7 +12,7 @@ export type PlaceTag =
 
 export type PlaceSource = "curated";
 
-export type VenueCategory = "coffee_shop" | "bean_store" | "both";
+export type VenueCategory = "coffee_shop" | "coffee_stand" | "bean_store" | "both";
 
 export type RecommendationMode = "gis_rule_based";
 
@@ -32,6 +32,7 @@ export type ParsedIntent = {
   vibeNotes: string[];
   wantsRoastery: boolean;
   wantsWorkFriendly: boolean;
+  wantsCoffeeStand: boolean;
   wantsInstagram: boolean;
   keywords: string[];
 };

@@ -69,6 +69,9 @@ export function parseIntent(input: string): ParsedIntent {
   const tags = new Set<PlaceTag>();
   const notes = new Set<string>();
   const keywords = new Set<string>(["coffee shop", "cafe"]);
+  const wantsCoffeeStand = /(コーヒースタンド|スタンド|ふらっと|サクッと|気軽|テイクアウト|持ち帰り)/i.test(
+    normalized,
+  );
   const wantsInstagram = /(インスタ|instagram|Instagram|ig\b|SNS)/i.test(normalized);
 
   for (const rule of rules) {
@@ -94,6 +97,7 @@ export function parseIntent(input: string): ParsedIntent {
     vibeNotes: [...notes],
     wantsRoastery: tags.has("roastery"),
     wantsWorkFriendly: tags.has("study"),
+    wantsCoffeeStand,
     wantsInstagram,
     keywords: [...keywords],
   };

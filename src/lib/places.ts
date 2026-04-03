@@ -1,7 +1,7 @@
 import { mockPlaces } from "../data/mockPlaces";
 import type { ParsedIntent, Place, SearchCenter } from "../types";
 
-const allowedCategories = new Set(["coffee_shop", "bean_store", "both"]);
+const allowedCategories = new Set(["coffee_shop", "coffee_stand", "bean_store", "both"]);
 
 export const jiyugaokaCenter: SearchCenter = {
   id: "jiyugaoka",
@@ -50,6 +50,10 @@ function toScopedPlace(place: Place, center: SearchCenter, intent: ParsedIntent)
   }
 
   if (intent.wantsInstagram && !place.instagramUrl) {
+    return null;
+  }
+
+  if (intent.wantsCoffeeStand && place.category !== "coffee_stand") {
     return null;
   }
 

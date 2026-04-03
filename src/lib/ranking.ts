@@ -60,6 +60,9 @@ export function rankPlaces(
 
       if (place.category === "bean_store") {
         whyThisPlace.push("豆購入目的にも対応できる候補");
+      } else if (place.category === "coffee_stand") {
+        score += intent.wantsCoffeeStand ? 10 : 4;
+        whyThisPlace.push("ふらっと立ち寄りやすいスタンド形態");
       } else if (place.category === "both") {
         score += 6;
         whyThisPlace.push("カフェ利用と豆購入の両方に対応");

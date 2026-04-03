@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useState } from "react";
+import type { KeyboardEvent } from "react";
 import { parseIntent } from "./lib/intent";
 import { jiyugaokaCenter, searchNearbyPlaces } from "./lib/places";
 import { rankPlaces, tagLabel } from "./lib/ranking";
@@ -15,22 +16,23 @@ const starterPrompts = [
 const showAllPattern = /全ポイントが見たい|全ポイント|全部見たい|全件見たい|全部表示/i;
 
 export default function App() {
-  const [query, setQuery] = useState("");
+  const [draftQuery, setDraftQuery] = useState("");
+  const [submittedQuery, setSubmittedQuery] = useState("");
   const [center] = useState<SearchCenter>(jiyugaokaCenter);
   const [places, setPlaces] = useState<Place[]>([]);
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [resetToCenterKey, setResetToCenterKey] = useState(0);
 
-  const intent = parseIntent(query);
-  const showAllPoints = showAllPattern.test(query);
+  const intent = parseIntent(submittedQuery);
+  const showAllPoints = showAllPattern.test(submittedQuery);
   const rankedPlaces = rankPlaces(places, intent, center).slice(
     0,
     showAllPoints ? places.length : 10,
   );
   const selectedPlace =
     rankedPlaces.find((place) => place.id === selectedPlaceId) ?? rankedPlaces[0] ?? null;
-  const hasQuery = query.trim().length > 0;
+  const hasQuery = submittedQuery.trim().length > 0;
   const resultSummary = loading
     ? "候補を計算中"
     : rankedPlaces.length > 0
@@ -65,11 +67,24 @@ export default function App() {
     return () => {
       active = false;
     };
-  }, [center, query, showAllPoints]);
+  }, [center, submittedQuery, showAllPoints]);
 
   function handleResetToCenter() {
     setSelectedPlaceId(null);
     setResetToCenterKey((current) => current + 1);
+  }
+
+  function handleSubmitSearch() {
+    setSubmittedQuery(draftQuery.trim());
+  }
+
+  function handleQueryKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key !== "Enter") {
+      return;
+    }
+
+    event.preventDefault();
+    handleSubmitSearch();
   }
 
   return (
@@ -102,19 +117,46 @@ export default function App() {
                   <span className="mb-2 block text-lg font-semibold text-stone-950">
                     自由が丘で、どんなコーヒー体験を探していますか
                   </span>
-                  <textarea
-                    value={query}
-                    onChange={(event) => setQuery(event.target.value)}
-                    className="min-h-32 w-full rounded-[24px] border border-stone-200 bg-stone-50/80 px-4 py-4 text-sm leading-7 text-stone-900 outline-none transition focus:border-amber-500 focus:bg-white"
-                    placeholder="例: 静かに過ごせて、豆もちゃんとしている自由が丘の店"
-                  />
+                  <div className="relative">
+                    <textarea
+                      value={draftQuery}
+                      onChange={(event) => setDraftQuery(event.target.value)}
+                      onKeyDown={handleQueryKeyDown}
+                      className="min-h-32 w-full rounded-[24px] border border-stone-200 bg-stone-50/80 px-4 py-4 pr-16 text-sm leading-7 text-stone-900 outline-none transition focus:border-amber-500 focus:bg-white"
+                      placeholder="例: 静かに過ごせて、豆もちゃんとしている自由が丘の店"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleSubmitSearch}
+                      className="absolute bottom-4 right-4 inline-flex h-10 w-10 items-center justify-center rounded-full bg-stone-950 text-white transition hover:bg-stone-800"
+                      aria-label="検索する"
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-4 w-4"
+                        aria-hidden="true"
+                      >
+                        <path
+                          d="M4 11.5L20 4L12.5 20L10.5 13.5L4 11.5Z"
+                          stroke="currentColor"
+                          strokeWidth="1.8"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </button>
+                  </div>
                 </label>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {starterPrompts.map((prompt) => (
                     <button
                       key={prompt}
                       type="button"
-                      onClick={() => setQuery(prompt)}
+                      onClick={() => {
+                        setDraftQuery(prompt);
+                        setSubmittedQuery(prompt);
+                      }}
                       className="rounded-full border border-stone-200 bg-white px-3 py-2 text-xs font-medium text-stone-700 transition hover:border-amber-400 hover:text-amber-800"
                     >
                       {prompt}
@@ -153,7 +195,7 @@ export default function App() {
                           : "border-stone-200 bg-white hover:border-stone-300"
                       }`}
                     >
-                      <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start gap-3">
                         <div>
                           <p className="text-xs uppercase tracking-[0.24em] text-stone-400">#{index + 1}</p>
                           <h2 className="mt-1 text-lg font-semibold text-stone-950">{place.name}</h2>
@@ -172,9 +214,6 @@ export default function App() {
                               Instagram {place.instagramHandle}
                             </a>
                           ) : null}
-                        </div>
-                        <div className="rounded-full bg-stone-950 px-3 py-1 text-xs font-semibold text-white">
-                          {Math.round(place.score ?? 0)}
                         </div>
                       </div>
                       <div className="mt-2.5 flex flex-wrap gap-2">
@@ -258,6 +297,10 @@ function Badge({ children, tone }: { children: string; tone: "teal" | "slate" })
 function categoryLabel(category: VenueCategory): string {
   if (category === "both") {
     return "CAFE + BEANS";
+  }
+
+  if (category === "coffee_stand") {
+    return "COFFEE STAND";
   }
 
   if (category === "bean_store") {
