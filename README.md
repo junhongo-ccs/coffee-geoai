@@ -1,28 +1,38 @@
 # coffee-geoai
 
-`coffee-geoai` は、自然言語で好みを伝えると、GeoAI 的な解釈と地理情報を組み合わせてコーヒー店候補を並べ替えるプロトタイプです。
+`coffee-geoai` は、自由が丘を対象にしたコーヒー推薦 PoC です。  
+ArcGIS を地図表示と GIS レビュー文脈の中心に置きつつ、推薦自体はキュレーション済みデータと明示的な空間ルールで構成します。
 
-現在の実装では、以下の流れで体験を構成しています。
+現時点の方針は次の通りです。
 
-- 日本語の希望をタグへ変換する
-- 距離と雰囲気適合度で候補をランク付けする
+- 対象範囲は東京・自由が丘に限定
+- 対象カテゴリはコーヒーショップとコーヒー豆店に限定
+- 一般的な LLM を最終意思決定に使わない
+- ArcGIS は主に地図可視化と GIS 的な説明の文脈に使う
+- ArcGIS Personal Use 制約を前提に、GeoAI/API が使えなくても成立する PoC とする
+
+現在の推薦フローは、概ね次の形で構成します。
+
+- 日本語入力を軽量に解釈する
+- 自由が丘内の候補だけを扱う
+- 距離、カテゴリ、空間的な条件で候補を並べ替える
 - ArcGIS の 3D マップ上で候補を可視化する
 
-## App Setup
+## セットアップ
 
-### Requirements
+### 前提
 
 - Node.js 20 以上を推奨
 - npm
-- ArcGIS を live で使う場合は `VITE_ARCGIS_API_KEY`
+- ArcGIS の地図表示や参照実験を行う場合のみ `VITE_ARCGIS_API_KEY`
 
-### Install
+### インストール
 
 ```bash
 npm install
 ```
 
-`.env` を使う場合は `.env.example` を元に作成します。
+必要なら `.env.example` を元に `.env` を作成します。
 
 ```bash
 cp .env.example .env
@@ -34,15 +44,18 @@ cp .env.example .env
 VITE_ARCGIS_API_KEY=your_key_here
 ```
 
-API キーがない場合でも、東京周辺のモックデータで動作します。
+注意:
 
-### Run
+- API キーがなくても、キュレーション済みデータで PoC の主要挙動は確認できます
+- ArcGIS Personal Use では GeoAI/API 経路が制限される可能性があるため、API キーを前提にしたライブ推薦は現在の前提ではありません
+
+### 起動
 
 ```bash
 npm run dev
 ```
 
-### Build
+### ビルド
 
 ```bash
 npm run build
@@ -52,12 +65,13 @@ npm run build
 
 このリポジトリは GitHub Spec Kit を使って、仕様駆動で整理しながら進める前提です。
 
-初期化で追加される主なディレクトリ:
+主なディレクトリ:
 
 - `.specify/`
 - `.agents/skills/`
+- `specs/001-geoai-jiyugaoka/`
 
-Codex からは以下のスキルを順に使います。
+Codex からは主に以下の順で使います。
 
 - `$speckit-constitution`
 - `$speckit-specify`
@@ -71,72 +85,15 @@ Codex からは以下のスキルを順に使います。
 - `$speckit-checklist`
 - `$speckit-analyze`
 
-## Mac Setup
+## 現在のドキュメント
 
-### Case 1: この README と一緒に `.specify/` と `.agents/skills/` も Git に入っている場合
+- `specs/001-geoai-jiyugaoka/spec.md`
+- `specs/001-geoai-jiyugaoka/plan.md`
+- `specs/001-geoai-jiyugaoka/tasks.md`
+- `docs/2026-04-03-handoff.md`
+- `docs/working-plan.md`
 
-その場合は、Mac 側で clone した時点で Spec Kit の土台も入っています。  
-基本的には追加の `specify init` は不要です。
-
-やることは以下だけです。
-
-```bash
-git clone <repo-url>
-cd coffee-geoai
-npm install
-npm run dev
-```
-
-そのまま Codex で `speckit` スキルを使えます。
-
-### Case 2: Mac 側の clone に `.specify/` や `.agents/skills/` が含まれていない場合
-
-その場合は、clone したプロジェクトルートで Spec Kit を初期化します。
-
-前提:
-
-- `uv` / `uvx` が使えること
-- Codex を使うこと
-
-初期化コマンド:
-
-```bash
-uvx --from git+https://github.com/github/spec-kit.git specify init --here --ai codex --ignore-agent-tools
-```
-
-必要に応じて、既存ファイル確認を省略する場合は `--force` を付けます。
-
-```bash
-uvx --from git+https://github.com/github/spec-kit.git specify init --here --force --ai codex --ignore-agent-tools
-```
-
-## Windows Setup
-
-Windows でも考え方は同じです。  
-このリポジトリ直下で Spec Kit を初期化します。
-
-```powershell
-uvx --system-certs --from git+https://github.com/github/spec-kit.git specify init --here --force --offline --ai codex --script ps --ignore-agent-tools
-```
-
-Windows では証明書や文字コードの影響を受けることがあるため、Mac よりオプションが増える場合があります。
-
-## Repository Policy
-
-Mac でも Windows でも同じ状態で始めたいなら、少なくとも以下をリポジトリで管理する方が運用しやすいです。
-
-- `.specify/`
-- `.agents/skills/`
-- `README.md`
-
-逆に、ローカル固有の認証情報やエージェント生成物が `.agents/` 配下に増える場合は、どこまで Git 管理するかを別途決めます。
-
-## References
+## 参考
 
 - GitHub Spec Kit: <https://github.com/github/spec-kit>
 - Spec Kit Docs: <https://github.github.com/spec-kit/>
-
-## Docs
-
-- `docs/2026-04-03-handoff.md`
-- `docs/working-plan.md`

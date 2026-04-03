@@ -2,70 +2,60 @@
 
 ## Goal
 
-Build a credible GeoAI PoC for Jiyugaoka coffee venue recommendation that can survive scrutiny from GIS professionals.
+自由が丘限定のコーヒー推薦について、GIS に詳しいレビュー担当者に説明できる PoC を作る。
+
+## Current Decision
+
+現在の実装方針は次の通り。
+
+- ArcGIS は地図表示と GIS レビュー文脈の中心に置く
+- 推薦の MVP はキュレーション済みデータセット + 明示的な空間ルールベースで実装する
+- 一般的な LLM を最終判断に使わない
+- ArcGIS Personal Use では GeoAI/API 利用が難しい可能性を前提にする
 
 ## Immediate Priority
 
-Do not continue polishing the current UI until the ArcGIS service and authentication path is proven.
+UI を磨く前に、まず以下を揃える。
+
+- 自由が丘限定のスコープ制御
+- コーヒーショップ / 豆店へのカテゴリ制約
+- 空間理由が追えるランキング説明
+- ArcGIS 地図文脈とローカル推薦ロジックの区別
 
 ## Proposed Work Order
 
-### Phase 1: Feasibility
+### Phase 1: Scope Fix
 
-- Verify ArcGIS Personal Use constraints
-- Verify OAuth app registration path
-- Verify whether HTTPS localhost or another app type is required
-- Verify what ArcGIS services can be used in practice
+- 自由が丘の中心点と範囲を固定する
+- 東京全域モックを自由が丘限定データへ置き換える
+- 許可カテゴリ以外を除外する
 
-### Phase 2: Recommendation Architecture
+### Phase 2: Recommendation Refactor
 
-Choose one of these paths:
+- 既存の意図解釈を補助層として整理する
+- 距離、カテゴリ、範囲制約を軸にスコアリングする
+- 推薦理由を GIS 観点で説明可能にする
 
-#### Option A
+### Phase 3: UI Alignment
 
-ArcGIS-only recommendation flow
-
-- ArcGIS-authenticated search or geospatial services
-- ArcGIS-centered ranking and explanation
-- strongest GIS credibility if workable
-
-#### Option B
-
-Google Places + ArcGIS hybrid
-
-- Google Places for candidate venue retrieval
-- ArcGIS for area constraint, map, spatial reasoning, explanation, and ranking structure
-- acceptable only if ArcGIS still remains clearly central in the story
-
-### Phase 3: App Refactor
-
-- remove `VITE_ARCGIS_API_KEY` assumption if invalid
-- replace rule-first recommendation framing
-- align app copy with the PoC definition
-- support top 3 recommendation presentation
-- reserve funnel-style narrowing as a secondary feature
+- 画面文言を「東京カフェデモ」から「自由が丘 GIS 根拠付き PoC」へ寄せる
+- Top 3 表示を基準にする
+- ArcGIS 文脈とローカル計算ランキングを明示的に見せ分ける
 
 ### Phase 4: Demo Readiness
 
-- make ArcGIS usage legible in UI and narrative
-- show why each result is selected in GIS terms
-- ensure all outputs stay inside Jiyugaoka and allowed venue types
-- prepare a small set of demo prompts in Japanese
+- 自由が丘内だけが出ることを確認する
+- カテゴリ制約が守られていることを確認する
+- GIS レビュー担当者向け説明が追えることを確認する
+- 日本語デモ入力を少数に絞って整える
 
 ## Risks
 
-- ArcGIS Personal Use may block the easiest service/auth path
-- Google Places may weaken ArcGIS credibility if overused
-- current prototype may mislead implementation if reused too directly
+- ArcGIS Personal Use 制約により、期待した API 経路が使えない可能性がある
+- ArcGIS が地図表示だけに見えると、PoC の説得力が弱くなる
+- 既存の東京全域デモ実装を引きずると、自由が丘 PoC の説明が崩れる
 
-## Current Practical Conclusion
+## Practical Conclusion
 
-The safest next move is not coding more recommendation logic yet.
-
-The safest next move is to settle:
-
-- auth model
-- service availability
-- data source strategy
-
-before implementation planning goes deeper.
+現在の安全な進め方は、ArcGIS のライブ推薦機能に賭けることではない。  
+まずは、自由が丘限定の地理制約と明示的な空間ルールに基づく推薦を成立させ、そのうえで ArcGIS 可視化と説明性を強く見せる。
