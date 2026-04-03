@@ -242,8 +242,8 @@ export const mockPlaces: Place[] = [
   {
     id: "curated-enseigne-angle",
     name: "カフェ・アンセーニュ・ダングル 自由が丘店",
-    latitude: 35.6090625,
-    longitude: 139.6658125,
+    latitude: 35.6080411,
+    longitude: 139.6702441,
     address: "東京都目黒区自由が丘1-13-6 鳥井ビル1F",
     source: "curated",
     category: "coffee_shop",

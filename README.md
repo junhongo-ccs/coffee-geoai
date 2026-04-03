@@ -1,99 +1,123 @@
 # coffee-geoai
 
-`coffee-geoai` は、自由が丘を対象にしたコーヒー推薦 PoC です。  
-ArcGIS を地図表示と GIS レビュー文脈の中心に置きつつ、推薦自体はキュレーション済みデータと明示的な空間ルールで構成します。
+自由が丘・奥沢・九品仏エリアのコーヒー店を、日本語の自然文から絞り込んで見せるフロントエンド PoC です。
 
-現時点の方針は次の通りです。
+入力文を軽く解釈し、キュレーション済みの店舗データを
 
-- 対象範囲は東京・自由が丘に限定
-- 対象カテゴリはコーヒーショップとコーヒー豆店に限定
-- 一般的な LLM を最終意思決定に使わない
-- ArcGIS は主に地図可視化と GIS 的な説明の文脈に使う
-- ArcGIS Personal Use 制約を前提に、GeoAI/API が使えなくても成立する PoC とする
+- 自由が丘駅からの距離
+- カテゴリ
+- 意図タグ
 
-現在の推薦フローは、概ね次の形で構成します。
+で順位付けして、カード一覧と地図に表示します。
 
-- 日本語入力を軽量に解釈する
-- 自由が丘内の候補だけを扱う
-- 距離、カテゴリ、空間的な条件で候補を並べ替える
-- ArcGIS の 3D マップ上で候補を可視化する
+## 何ができるか
+
+- 自由が丘・奥沢・九品仏エリアのコーヒー店を表示
+- 日本語の自然文から、静かさ・雰囲気・作業向き・喫茶店寄り・ロースター寄りなどを解釈
+- 初期状態では、自由が丘駅に近い順の `Top 10` を表示
+- `全ポイントが見たい` で全件表示
+- `インスタがあるお店` で Instagram URL がある店舗だけ表示
+- 左のカードか地図のポイントを押すと、その店を選択
+- ヘッダー左の `JIYUGAOKA COFFEE RECOMMENDATION` を押すと、地図が自由が丘駅中心に戻る
+
+## 技術スタック
+
+- `Vite`
+- `React`
+- `TypeScript`
+- `Tailwind CSS`
+- `MapLibre GL JS`
+- `MapTiler`
+
+## 現在の前提
+
+- 推薦は API ベースではなく、ローカルなルールベースです
+- 店舗データは `src/data/mockPlaces.ts` のキュレーション済みデータです
+- 距離は「自由が丘駅中心からの直線距離」です
+- 画面は `1920x1080` のデスクトップ表示を基準に調整しています
 
 ## セットアップ
 
-### 前提
+前提:
 
-- Node.js 20 以上を推奨
+- Node.js 20 以上推奨
 - npm
-- ArcGIS の地図表示や参照実験を行う場合のみ `VITE_ARCGIS_API_KEY`
 
-### インストール
+インストール:
 
 ```bash
 npm install
 ```
 
-必要なら `.env.example` を元に `.env` を作成します。
-
-```bash
-cp .env.example .env
-```
-
-`.env`:
-
-```env
-VITE_ARCGIS_API_KEY=your_key_here
-```
-
-注意:
-
-- API キーがなくても、キュレーション済みデータで PoC の主要挙動は確認できます
-- ArcGIS Personal Use では GeoAI/API 経路が制限される可能性があるため、API キーを前提にしたライブ推薦は現在の前提ではありません
-
-### 起動
+開発サーバー起動:
 
 ```bash
 npm run dev
 ```
 
-### ビルド
+ビルド:
 
 ```bash
 npm run build
 ```
 
-## Spec Kit Workflow
+ローカル確認:
 
-このリポジトリは GitHub Spec Kit を使って、仕様駆動で整理しながら進める前提です。
+```bash
+npm run preview
+```
 
-主なディレクトリ:
+## 地図
 
-- `.specify/`
-- `.agents/skills/`
-- `specs/001-geoai-jiyugaoka/`
+地図表示は `MapLibre GL JS` を使っています。現在のスタイルは MapTiler のスタイル URL を直接使っています。
 
-Codex からは主に以下の順で使います。
+実装の中心:
 
-- `$speckit-constitution`
-- `$speckit-specify`
-- `$speckit-plan`
-- `$speckit-tasks`
-- `$speckit-implement`
+- `src/components/SceneMap.tsx`
 
-補助的に以下も使えます。
+## GitHub Pages
 
-- `$speckit-clarify`
-- `$speckit-checklist`
-- `$speckit-analyze`
+このリポジトリは GitHub Pages 公開向けに設定済みです。
 
-## 現在のドキュメント
+- Vite `base`: `/coffee-geoai/`
+- workflow: `.github/workflows/deploy-pages.yml`
 
-- `specs/001-geoai-jiyugaoka/spec.md`
-- `specs/001-geoai-jiyugaoka/plan.md`
-- `specs/001-geoai-jiyugaoka/tasks.md`
-- `docs/2026-04-03-handoff.md`
-- `docs/working-plan.md`
+GitHub 側では `Settings > Pages > Source` を `GitHub Actions` に設定してください。
 
-## 参考
+公開先:
 
-- GitHub Spec Kit: <https://github.com/github/spec-kit>
-- Spec Kit Docs: <https://github.github.com/spec-kit/>
+- <https://junhongo-ccs.github.io/coffee-geoai/>
+
+## 主なファイル
+
+- `src/App.tsx`
+  - 画面全体、入力欄、カード一覧、選択状態の管理
+- `src/components/SceneMap.tsx`
+  - 地図描画、ピン、選択地点への移動、中心リセット
+- `src/data/mockPlaces.ts`
+  - キュレーション済み店舗データ
+- `src/lib/intent.ts`
+  - 日本語入力の軽量解釈
+- `src/lib/places.ts`
+  - エリア内候補の抽出
+- `src/lib/ranking.ts`
+  - 距離と意図タグによる順位付け
+- `src/types.ts`
+  - 店舗データと意図解釈の型
+
+## 仕様メモ
+
+Spec Kit ベースの仕様整理は `specs/001-geoai-jiyugaoka/` にあります。
+
+- `spec.md`
+- `plan.md`
+- `tasks.md`
+- `research.md`
+- `data-model.md`
+- `quickstart.md`
+
+## 今後の整理候補
+
+- Instagram 情報は、推測ではなく確認済みのものだけ残す
+- 店舗座標は Google Maps / Plus Code ベースで順次精度を上げる
+- `全店見たい` 状態で、カード・地図・ポップアップの整合を全件チェックする
