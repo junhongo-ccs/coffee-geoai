@@ -42,6 +42,7 @@ export type ParsedIntent = {
   wantsWorkFriendly: boolean;
   wantsCoffeeStand: boolean;
   wantsInstagram: boolean;
+  wantsAllPoints: boolean;
   distancePreference: DistancePreference;
   keywords: string[];
   summary?: string;

@@ -7,8 +7,6 @@ import type { ParsedIntent, Place, SearchCenter, VenueCategory } from "./types";
 
 const SceneMap = lazy(() => import("./components/SceneMap"));
 
-const showAllPattern = /全ポイントが見たい|全ポイント|全部見たい|全件見たい|全部表示/i;
-
 export default function App() {
   const [draftQuery, setDraftQuery] = useState("");
   const [submittedQuery, setSubmittedQuery] = useState("");
@@ -21,7 +19,7 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [resetToCenterKey, setResetToCenterKey] = useState(0);
 
-  const showAllPoints = showAllPattern.test(submittedQuery);
+  const showAllPoints = intent?.wantsAllPoints ?? false;
   const rankedPlaces = rankPlaces(places, intent ?? emptyIntent(submittedQuery), center).slice(
     0,
     showAllPoints ? places.length : 10,
@@ -46,6 +44,7 @@ export default function App() {
       setLoading(true);
       const nextIntent = await parseIntent(submittedQuery);
       const results = await searchNearbyPlaces(center, nextIntent);
+      const nextShowAllPoints = nextIntent.wantsAllPoints;
 
       if (!active) {
         return;
@@ -55,7 +54,7 @@ export default function App() {
       setPlaces(results);
       setSelectedPlaceId(
         rankPlaces(results, nextIntent, center)
-          .slice(0, showAllPoints ? results.length : 10)[0]?.id ?? null,
+          .slice(0, nextShowAllPoints ? results.length : 10)[0]?.id ?? null,
       );
       setLoading(false);
     }
@@ -65,7 +64,7 @@ export default function App() {
     return () => {
       active = false;
     };
-  }, [center, submittedQuery, showAllPoints]);
+  }, [center, submittedQuery]);
 
   useEffect(() => {
     const nextDraft = draftQuery.trim();
@@ -422,6 +421,7 @@ function emptyIntent(query: string): ParsedIntent {
     wantsWorkFriendly: false,
     wantsCoffeeStand: false,
     wantsInstagram: false,
+    wantsAllPoints: false,
     distancePreference: "any",
     keywords: [],
     interpretationMode: "rule_based",

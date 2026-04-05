@@ -14,6 +14,7 @@ type GeminiIntentPayload = {
   wants_coffee_stand?: boolean;
   wants_bean_store?: boolean;
   wants_instagram?: boolean;
+  wants_all_points?: boolean;
   distance_preference?: string;
   summary?: string;
   notes?: string[];
@@ -127,6 +128,7 @@ function buildIntent(input: string, draft: Partial<ParsedIntent>): ParsedIntent 
   const tags = [...new Set([...mustHaveTags, ...niceToHaveTags])];
   const wantsCoffeeStand = draft.wantsCoffeeStand ?? false;
   const wantsInstagram = draft.wantsInstagram ?? false;
+  const wantsAllPoints = draft.wantsAllPoints ?? false;
   const wantsBeanStore =
     draft.wantsBeanStore ?? (/(豆|焙煎|ロースタ|浅煎り|深煎り)/.test(normalized));
   const wantsRoastery =
@@ -152,6 +154,7 @@ function buildIntent(input: string, draft: Partial<ParsedIntent>): ParsedIntent 
     wantsWorkFriendly,
     wantsCoffeeStand,
     wantsInstagram,
+    wantsAllPoints,
     distancePreference,
     keywords,
     summary: draft.summary?.trim() || undefined,
@@ -171,6 +174,10 @@ export function parseIntentRuleBased(input: string): ParsedIntent {
     normalized,
   );
   const wantsInstagram = /(インスタ|instagram|Instagram|ig\b|SNS)/i.test(normalized);
+  const wantsAllPoints =
+    /(全ポイントが見たい|全ポイント|全スポットが見たい|全スポット|全店舗が見たい|全店舗|全部見たい|全件見たい|全部表示|全部見せて|全スポット見せて|全店舗見せて)/i.test(
+      normalized,
+    );
   const distancePreference = /(駅近|駅から近い|駅チカ|すぐ|徒歩[0-9０-９]+分|近場)/.test(normalized)
     ? "near_station"
     : /(徒歩圏|歩いて|散歩|ぶらぶら|少し歩いても)/.test(normalized)
@@ -216,6 +223,7 @@ export function parseIntentRuleBased(input: string): ParsedIntent {
     wantsWorkFriendly: tags.has("study"),
     wantsCoffeeStand,
     wantsInstagram,
+    wantsAllPoints,
     distancePreference,
     keywords: [...keywords],
     summary: normalized || "自由が丘のコーヒー候補を探す",
@@ -260,12 +268,13 @@ async function requestGeminiIntent(input: string): Promise<GeminiIntentPayload> 
                   "Set wants_bean_store true only when the user clearly wants beans, roasting, or bean purchase.",
                   "Set wants_coffee_stand true only when they clearly want a stand or quick takeaway style.",
                   "Set wants_instagram true only when they ask for Instagram or social accounts.",
+                  "Set wants_all_points true when the user wants to see every spot, all stores, or the full list.",
                   "distance_preference must be one of any, walkable, near_station.",
                   "Use near_station for requests like station-near, quick access, very close, or a few minutes from the station.",
                   "Use walkable for requests that accept a short walk.",
                   "Keep summary short Japanese text.",
                   `Input: ${input}`,
-                  'JSON shape: {"must_have_tags":[],"nice_to_have_tags":[],"avoid_tags":[],"wants_coffee_stand":false,"wants_bean_store":false,"wants_instagram":false,"distance_preference":"any","summary":"","notes":[],"keywords":[]}',
+                  'JSON shape: {"must_have_tags":[],"nice_to_have_tags":[],"avoid_tags":[],"wants_coffee_stand":false,"wants_bean_store":false,"wants_instagram":false,"wants_all_points":false,"distance_preference":"any","summary":"","notes":[],"keywords":[]}',
                 ].join("\n"),
               },
             ],
@@ -309,6 +318,7 @@ function buildGeminiIntent(input: string, payload: GeminiIntentPayload): ParsedI
   const wantsBeanStore = payload.wants_bean_store ?? fallback.wantsBeanStore;
   const wantsCoffeeStand = payload.wants_coffee_stand ?? fallback.wantsCoffeeStand;
   const wantsInstagram = payload.wants_instagram ?? fallback.wantsInstagram;
+  const wantsAllPoints = payload.wants_all_points ?? fallback.wantsAllPoints;
   const distancePreference =
     normalizeDistancePreference(payload.distance_preference) ?? fallback.distancePreference;
   const vibeNotes = uniqueStrings([...fallback.vibeNotes, ...(payload.notes ?? [])]);
@@ -343,6 +353,7 @@ function buildGeminiIntent(input: string, payload: GeminiIntentPayload): ParsedI
     wantsWorkFriendly: completedMustHaveTags.includes("study") || completedNiceToHaveTags.includes("study"),
     wantsCoffeeStand,
     wantsInstagram,
+    wantsAllPoints,
     distancePreference,
     keywords,
     summary: payload.summary?.trim() || normalized || fallback.summary,
