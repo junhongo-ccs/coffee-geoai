@@ -21,6 +21,8 @@ export default function App() {
   const [center] = useState<SearchCenter>(jiyugaokaCenter);
   const [places, setPlaces] = useState<Place[]>([]);
   const [intent, setIntent] = useState<ParsedIntent | null>(null);
+  const [previewIntent, setPreviewIntent] = useState<ParsedIntent | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [resetToCenterKey, setResetToCenterKey] = useState(0);
@@ -71,6 +73,41 @@ export default function App() {
     };
   }, [center, submittedQuery, showAllPoints]);
 
+  useEffect(() => {
+    const nextDraft = draftQuery.trim();
+
+    if (!nextDraft) {
+      setPreviewIntent(null);
+      setPreviewLoading(false);
+      return;
+    }
+
+    if (nextDraft === submittedQuery.trim() && intent) {
+      setPreviewIntent(intent);
+      setPreviewLoading(false);
+      return;
+    }
+
+    let active = true;
+    setPreviewLoading(true);
+
+    const timer = window.setTimeout(() => {
+      void parseIntent(nextDraft).then((nextIntent) => {
+        if (!active) {
+          return;
+        }
+
+        setPreviewIntent(nextIntent);
+        setPreviewLoading(false);
+      });
+    }, 450);
+
+    return () => {
+      active = false;
+      window.clearTimeout(timer);
+    };
+  }, [draftQuery, submittedQuery, intent]);
+
   function handleResetToCenter() {
     setSelectedPlaceId(null);
     setResetToCenterKey((current) => current + 1);
@@ -119,6 +156,9 @@ export default function App() {
                   <span className="mb-2 block text-lg font-semibold text-stone-950">
                     自由が丘で、どんなコーヒー体験を探していますか
                   </span>
+                  <span className="mb-3 block text-sm leading-6 text-stone-600">
+                    自然言語で入力してください。入力内容から LLM が意図タグを抽出して、候補の選び方に反映します。
+                  </span>
                   <div className="relative">
                     <textarea
                       value={draftQuery}
@@ -150,6 +190,39 @@ export default function App() {
                     </button>
                   </div>
                 </label>
+                {draftQuery.trim() ? (
+                  <div className="mt-3 rounded-[20px] border border-stone-200/80 bg-white/70 px-4 py-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-stone-500">
+                        Live Intent Tags
+                      </p>
+                      <p className="text-[11px] uppercase tracking-[0.18em] text-stone-400">
+                        {previewLoading ? "Parsing..." : previewIntent?.interpretationMode === "gemini" ? "Gemini" : "Rule Based"}
+                      </p>
+                    </div>
+                    <p className="mt-2 text-sm text-stone-700">
+                      {previewIntent?.summary ?? "入力内容を解釈中"}
+                    </p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {previewIntent?.mustHaveTags.map((tag) => (
+                        <Badge key={`preview-must-${tag}`} tone="teal">{`MUST ${tagLabel(tag)}`}</Badge>
+                      ))}
+                      {previewIntent?.niceToHaveTags
+                        .filter((tag) => !previewIntent.mustHaveTags.includes(tag))
+                        .map((tag) => (
+                          <Badge key={`preview-nice-${tag}`} tone="slate">
+                            {tagLabel(tag)}
+                          </Badge>
+                        ))}
+                      {previewIntent?.avoidTags.map((tag) => (
+                        <Badge key={`preview-avoid-${tag}`} tone="slate">{`AVOID ${tagLabel(tag)}`}</Badge>
+                      ))}
+                      {!previewLoading && previewIntent && previewIntent.tags.length === 0 ? (
+                        <span className="text-xs text-stone-500">まだタグが抽出されていません。</span>
+                      ) : null}
+                    </div>
+                  </div>
+                ) : null}
                 <div className="mt-3 flex flex-wrap gap-2">
                   {starterPrompts.map((prompt) => (
                     <button
