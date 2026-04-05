@@ -139,14 +139,10 @@ export function rankPlaces(
     .sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
 }
 
-export function formatDistance(distanceMeters: number, isWithinSearchArea?: boolean): string {
-  if (distanceMeters < 1000) {
-    return `${isWithinSearchArea ? "自由が丘中心から" : "中心地から"}約${Math.round(distanceMeters)}m`;
-  }
+export function formatDistance(distanceMeters: number, _isWithinSearchArea?: boolean): string {
+  const walkingMinutes = Math.max(1, Math.round(distanceMeters / 80));
 
-  return `${isWithinSearchArea ? "自由が丘中心から" : "中心地から"}約${(
-    distanceMeters / 1000
-  ).toFixed(1)}km`;
+  return `自由が丘駅から約徒歩${walkingMinutes}分`;
 }
 
 export function tagLabel(tag: string): string {
