@@ -173,7 +173,7 @@ export default function App() {
                       value={draftQuery}
                       onChange={(event) => setDraftQuery(event.target.value)}
                       onKeyDown={handleQueryKeyDown}
-                      className="min-h-32 w-full rounded-[24px] border border-stone-200 bg-stone-50/80 px-4 py-4 text-sm leading-7 text-stone-900 outline-none transition focus:border-amber-500 focus:bg-white"
+                      className="min-h-32 w-full rounded-[24px] border border-[#b79376] bg-[#fff] px-4 py-4 text-sm leading-7 text-stone-900 outline-none transition focus:border-[#8d6a52] focus:bg-[#fff] focus:outline-none"
                       placeholder="例: 静かに過ごせて、豆もちゃんとしている自由が丘の店"
                     />
                   </div>
