@@ -5,6 +5,9 @@ export type PlaceTag =
   | "study"
   | "specialty"
   | "roastery"
+  | "kissaten"
+  | "chain"
+  | "beans_only"
   | "spacious"
   | "sweet"
   | "morning"
@@ -29,6 +32,9 @@ export type ParsedIntent = {
   original: string;
   normalized: string;
   tags: PlaceTag[];
+  mustHaveTags: PlaceTag[];
+  niceToHaveTags: PlaceTag[];
+  avoidTags: PlaceTag[];
   vibeNotes: string[];
   wantsRoastery: boolean;
   wantsBeanStore: boolean;
@@ -36,6 +42,8 @@ export type ParsedIntent = {
   wantsCoffeeStand: boolean;
   wantsInstagram: boolean;
   keywords: string[];
+  summary?: string;
+  interpretationMode: "rule_based" | "gemini";
 };
 
 export type Place = {

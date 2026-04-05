@@ -7,6 +7,9 @@ const tagWeights: Record<string, number> = {
   study: 15,
   specialty: 14,
   roastery: 16,
+  kissaten: 16,
+  chain: 14,
+  beans_only: 18,
   spacious: 12,
   sweet: 10,
   morning: 10,
@@ -69,10 +72,25 @@ export function rankPlaces(
         whyThisPlace.push("カフェ利用と豆購入の両方に対応");
       }
 
-      for (const tag of intent.tags) {
+      for (const tag of intent.mustHaveTags) {
+        if (place.tags.includes(tag)) {
+          score += (tagWeights[tag] ?? 8) + 10;
+          whyThisPlace.push(`必須条件の「${tagLabel(tag)}」に合致`);
+        } else {
+          score -= 28;
+        }
+      }
+
+      for (const tag of intent.niceToHaveTags) {
         if (place.tags.includes(tag)) {
           score += tagWeights[tag] ?? 8;
           whyThisPlace.push(`「${tagLabel(tag)}」志向に合致`);
+        }
+      }
+
+      for (const tag of intent.avoidTags) {
+        if (place.tags.includes(tag)) {
+          score -= (tagWeights[tag] ?? 8) + 10;
         }
       }
 
@@ -122,6 +140,9 @@ export function tagLabel(tag: string): string {
     study: "作業向き",
     specialty: "スペシャルティ",
     roastery: "ロースター",
+    kissaten: "喫茶店",
+    chain: "チェーン",
+    beans_only: "豆専門",
     spacious: "広さ",
     sweet: "スイーツ",
     morning: "朝向き",

@@ -3,7 +3,7 @@ import type { KeyboardEvent } from "react";
 import { parseIntent } from "./lib/intent";
 import { jiyugaokaCenter, searchNearbyPlaces } from "./lib/places";
 import { rankPlaces, tagLabel } from "./lib/ranking";
-import type { Place, SearchCenter, VenueCategory } from "./types";
+import type { ParsedIntent, Place, SearchCenter, VenueCategory } from "./types";
 
 const SceneMap = lazy(() => import("./components/SceneMap"));
 
@@ -20,13 +20,13 @@ export default function App() {
   const [submittedQuery, setSubmittedQuery] = useState("");
   const [center] = useState<SearchCenter>(jiyugaokaCenter);
   const [places, setPlaces] = useState<Place[]>([]);
+  const [intent, setIntent] = useState<ParsedIntent | null>(null);
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [resetToCenterKey, setResetToCenterKey] = useState(0);
 
-  const intent = parseIntent(submittedQuery);
   const showAllPoints = showAllPattern.test(submittedQuery);
-  const rankedPlaces = rankPlaces(places, intent, center).slice(
+  const rankedPlaces = rankPlaces(places, intent ?? emptyIntent(submittedQuery), center).slice(
     0,
     showAllPoints ? places.length : 10,
   );
@@ -48,15 +48,17 @@ export default function App() {
 
     async function runSearch() {
       setLoading(true);
-      const results = await searchNearbyPlaces(center, intent);
+      const nextIntent = await parseIntent(submittedQuery);
+      const results = await searchNearbyPlaces(center, nextIntent);
 
       if (!active) {
         return;
       }
 
+      setIntent(nextIntent);
       setPlaces(results);
       setSelectedPlaceId(
-        rankPlaces(results, intent, center)
+        rankPlaces(results, nextIntent, center)
           .slice(0, showAllPoints ? results.length : 10)[0]?.id ?? null,
       );
       setLoading(false);
@@ -179,9 +181,34 @@ export default function App() {
                   {hasQuery
                     ? showAllPoints
                       ? "隠しコマンドを検出したため、自由が丘エリアの全ポイントを表示しています。"
-                      : "自由が丘駅からの距離・カテゴリ・意図タグで順位付けしています。"
+                      : "自由が丘駅からの距離・カテゴリ・意図解釈で順位付けしています。"
                     : "未入力時は、自由が丘駅から近い順に 10 件を表示します。"}
                 </p>
+                {hasQuery && intent ? (
+                  <div className="mb-4 rounded-[18px] border border-stone-200 bg-stone-50 px-4 py-3">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-stone-500">
+                      Intent Parse
+                    </p>
+                    <p className="mt-2 text-sm text-stone-700">
+                      {intent.summary ?? intent.normalized}
+                    </p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {intent.mustHaveTags.map((tag) => (
+                        <Badge key={`must-${tag}`} tone="teal">{`MUST ${tagLabel(tag)}`}</Badge>
+                      ))}
+                      {intent.niceToHaveTags
+                        .filter((tag) => !intent.mustHaveTags.includes(tag))
+                        .map((tag) => (
+                          <Badge key={`nice-${tag}`} tone="slate">
+                            {tagLabel(tag)}
+                          </Badge>
+                        ))}
+                      {intent.avoidTags.map((tag) => (
+                          <Badge key={`avoid-${tag}`} tone="slate">{`AVOID ${tagLabel(tag)}`}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
 
                 <div className="space-y-2.5">
                   {rankedPlaces.map((place, index) => (
@@ -308,4 +335,23 @@ function categoryLabel(category: VenueCategory): string {
   }
 
   return "COFFEE SHOP";
+}
+
+function emptyIntent(query: string): ParsedIntent {
+  return {
+    original: query,
+    normalized: query.trim(),
+    tags: [],
+    mustHaveTags: [],
+    niceToHaveTags: [],
+    avoidTags: [],
+    vibeNotes: [],
+    wantsRoastery: false,
+    wantsBeanStore: false,
+    wantsWorkFriendly: false,
+    wantsCoffeeStand: false,
+    wantsInstagram: false,
+    keywords: [],
+    interpretationMode: "rule_based",
+  };
 }

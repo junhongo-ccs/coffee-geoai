@@ -61,6 +61,10 @@ function toScopedPlace(place: Place, center: SearchCenter, intent: ParsedIntent)
     return null;
   }
 
+  if (intent.mustHaveTags.length > 0 && intent.mustHaveTags.some((tag) => !place.tags.includes(tag))) {
+    return null;
+  }
+
   return {
     ...place,
     isWithinSearchArea: true,
