@@ -38,8 +38,8 @@ jobs:
 
       - name: Build
         run: |
-          npm exec -- tsc
-          npm exec -- vite build
+          ./node_modules/.bin/tsc
+          ./node_modules/.bin/vite build
         env:
           NODE_ENV: development
           VITE_ARCGIS_API_KEY: ${{ secrets.VITE_ARCGIS_API_KEY }}
