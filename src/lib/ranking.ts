@@ -105,6 +105,23 @@ export function rankPlaces(
         whyThisPlace.push("少し移動すれば届く範囲");
       }
 
+      if (intent.distancePreference === "near_station") {
+        if (distanceMeters < 400) {
+          score += 18;
+          whyThisPlace.push("駅近を優先する意図に合う");
+        } else if (distanceMeters < 800) {
+          score += 10;
+        } else {
+          score -= 10;
+        }
+      } else if (intent.distancePreference === "walkable") {
+        if (distanceMeters < 900) {
+          score += 8;
+        } else if (distanceMeters > 1600) {
+          score -= 6;
+        }
+      }
+
       place.semanticReasons.forEach((reason) => {
         if (whyThisPlace.length < 3) {
           whyThisPlace.push(reason);

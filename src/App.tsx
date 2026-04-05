@@ -7,12 +7,6 @@ import type { ParsedIntent, Place, SearchCenter, VenueCategory } from "./types";
 
 const SceneMap = lazy(() => import("./components/SceneMap"));
 
-const starterPrompts = [
-  "静かで作業しやすい自由が丘のカフェ",
-  "雰囲気いいロースターで豆も見たい",
-  "朝に入りやすくて居心地がいいお店",
-];
-
 const showAllPattern = /全ポイントが見たい|全ポイント|全部見たい|全件見たい|全部表示/i;
 
 export default function App() {
@@ -42,7 +36,7 @@ export default function App() {
         ? `自由が丘エリアの全 ${rankedPlaces.length} 件を表示`
         : hasQuery
         ? `自由が丘で ${rankedPlaces.length} 件の候補を提示`
-        : `自由が丘駅から近い順で ${rankedPlaces.length} 件を表示`
+        : `自由が丘で ${rankedPlaces.length} 件の候補を表示`
       : "条件に合う候補が見つかりません";
 
   useEffect(() => {
@@ -72,6 +66,22 @@ export default function App() {
       active = false;
     };
   }, [center, submittedQuery, showAllPoints]);
+
+  useEffect(() => {
+    const nextDraft = draftQuery.trim();
+
+    if (!nextDraft || nextDraft === submittedQuery.trim()) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setSubmittedQuery(nextDraft);
+    }, 700);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [draftQuery, submittedQuery]);
 
   useEffect(() => {
     const nextDraft = draftQuery.trim();
@@ -164,31 +174,13 @@ export default function App() {
                       value={draftQuery}
                       onChange={(event) => setDraftQuery(event.target.value)}
                       onKeyDown={handleQueryKeyDown}
-                      className="min-h-32 w-full rounded-[24px] border border-stone-200 bg-stone-50/80 px-4 py-4 pr-16 text-sm leading-7 text-stone-900 outline-none transition focus:border-amber-500 focus:bg-white"
+                      className="min-h-32 w-full rounded-[24px] border border-stone-200 bg-stone-50/80 px-4 py-4 text-sm leading-7 text-stone-900 outline-none transition focus:border-amber-500 focus:bg-white"
                       placeholder="例: 静かに過ごせて、豆もちゃんとしている自由が丘の店"
                     />
-                    <button
-                      type="button"
-                      onClick={handleSubmitSearch}
-                      className="absolute bottom-4 right-4 inline-flex h-10 w-10 items-center justify-center rounded-full bg-stone-950 text-white transition hover:bg-stone-800"
-                      aria-label="検索する"
-                    >
-                      <svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-4 w-4"
-                        aria-hidden="true"
-                      >
-                        <path
-                          d="M4 11.5L20 4L12.5 20L10.5 13.5L4 11.5Z"
-                          stroke="currentColor"
-                          strokeWidth="1.8"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                    </button>
                   </div>
+                  <span className="mt-2 block text-xs leading-5 text-stone-500">
+                    入力を止めると候補を自動更新します。Enter を押すとすぐ反映します。
+                  </span>
                 </label>
                 {draftQuery.trim() ? (
                   <div className="mt-3 rounded-[20px] border border-stone-200/80 bg-white/70 px-4 py-3">
@@ -203,6 +195,11 @@ export default function App() {
                     <p className="mt-2 text-sm text-stone-700">
                       {previewIntent?.summary ?? "入力内容を解釈中"}
                     </p>
+                    {previewIntent && previewIntent.distancePreference !== "any" ? (
+                      <p className="mt-2 text-xs font-medium uppercase tracking-[0.18em] text-teal-700">
+                        距離条件: {distancePreferenceLabel(previewIntent.distancePreference)}
+                      </p>
+                    ) : null}
                     <div className="mt-3 flex flex-wrap gap-2">
                       {previewIntent?.mustHaveTags.map((tag) => (
                         <Badge key={`preview-must-${tag}`} tone="teal">{`MUST ${tagLabel(tag)}`}</Badge>
@@ -223,21 +220,6 @@ export default function App() {
                     </div>
                   </div>
                 ) : null}
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {starterPrompts.map((prompt) => (
-                    <button
-                      key={prompt}
-                      type="button"
-                      onClick={() => {
-                        setDraftQuery(prompt);
-                        setSubmittedQuery(prompt);
-                      }}
-                      className="rounded-full border border-stone-200 bg-white px-3 py-2 text-xs font-medium text-stone-700 transition hover:border-amber-400 hover:text-amber-800"
-                    >
-                      {prompt}
-                    </button>
-                  ))}
-                </div>
               </div>
 
               <div>
@@ -255,16 +237,18 @@ export default function App() {
                     ? showAllPoints
                       ? "隠しコマンドを検出したため、自由が丘エリアの全ポイントを表示しています。"
                       : "自由が丘駅からの距離・カテゴリ・意図解釈で順位付けしています。"
-                    : "未入力時は、自由が丘駅から近い順に 10 件を表示します。"}
+                    : "未入力時も、距離とカテゴリを加味した総合順で 10 件を表示します。"}
                 </p>
                 {hasQuery && intent ? (
                   <div className="mb-4 rounded-[18px] border border-stone-200 bg-stone-50 px-4 py-3">
                     <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-stone-500">
                       Intent Parse
                     </p>
-                    <p className="mt-2 text-sm text-stone-700">
-                      {intent.summary ?? intent.normalized}
-                    </p>
+                    {intent.distancePreference !== "any" ? (
+                      <p className="mt-2 text-xs font-medium uppercase tracking-[0.18em] text-teal-700">
+                        距離条件: {distancePreferenceLabel(intent.distancePreference)}
+                      </p>
+                    ) : null}
                     <div className="mt-2 flex flex-wrap gap-2">
                       {intent.mustHaveTags.map((tag) => (
                         <Badge key={`must-${tag}`} tone="teal">{`MUST ${tagLabel(tag)}`}</Badge>
@@ -410,6 +394,18 @@ function categoryLabel(category: VenueCategory): string {
   return "COFFEE SHOP";
 }
 
+function distancePreferenceLabel(value: ParsedIntent["distancePreference"]): string {
+  if (value === "near_station") {
+    return "駅近優先";
+  }
+
+  if (value === "walkable") {
+    return "徒歩圏を優先";
+  }
+
+  return "指定なし";
+}
+
 function emptyIntent(query: string): ParsedIntent {
   return {
     original: query,
@@ -424,6 +420,7 @@ function emptyIntent(query: string): ParsedIntent {
     wantsWorkFriendly: false,
     wantsCoffeeStand: false,
     wantsInstagram: false,
+    distancePreference: "any",
     keywords: [],
     interpretationMode: "rule_based",
   };

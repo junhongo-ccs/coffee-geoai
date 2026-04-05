@@ -1,4 +1,4 @@
-import type { ParsedIntent, PlaceTag } from "../types";
+import type { DistancePreference, ParsedIntent, PlaceTag } from "../types";
 
 type IntentRule = {
   pattern: RegExp;
@@ -14,6 +14,7 @@ type GeminiIntentPayload = {
   wants_coffee_stand?: boolean;
   wants_bean_store?: boolean;
   wants_instagram?: boolean;
+  distance_preference?: string;
   summary?: string;
   notes?: string[];
   keywords?: string[];
@@ -110,6 +111,14 @@ function uniqueStrings(values: string[] | undefined): string[] {
   return [...new Set((values ?? []).map((value) => value.trim()).filter(Boolean))];
 }
 
+function normalizeDistancePreference(value: string | undefined): DistancePreference | undefined {
+  if (value === "near_station" || value === "walkable" || value === "any") {
+    return value;
+  }
+
+  return undefined;
+}
+
 function buildIntent(input: string, draft: Partial<ParsedIntent>): ParsedIntent {
   const normalized = input.trim().replace(/\s+/g, " ");
   const mustHaveTags = [...new Set(draft.mustHaveTags ?? [])];
@@ -128,6 +137,7 @@ function buildIntent(input: string, draft: Partial<ParsedIntent>): ParsedIntent 
     (tags.includes("study") || mustHaveTags.includes("study"));
   const vibeNotes = uniqueStrings(draft.vibeNotes);
   const keywords = uniqueStrings(draft.keywords);
+  const distancePreference = draft.distancePreference ?? "any";
 
   return {
     original: input,
@@ -142,6 +152,7 @@ function buildIntent(input: string, draft: Partial<ParsedIntent>): ParsedIntent 
     wantsWorkFriendly,
     wantsCoffeeStand,
     wantsInstagram,
+    distancePreference,
     keywords,
     summary: draft.summary?.trim() || undefined,
     interpretationMode: draft.interpretationMode ?? "rule_based",
@@ -160,6 +171,11 @@ export function parseIntentRuleBased(input: string): ParsedIntent {
     normalized,
   );
   const wantsInstagram = /(インスタ|instagram|Instagram|ig\b|SNS)/i.test(normalized);
+  const distancePreference = /(駅近|駅から近い|駅チカ|すぐ|徒歩[0-9０-９]+分|近場)/.test(normalized)
+    ? "near_station"
+    : /(徒歩圏|歩いて|散歩|ぶらぶら|少し歩いても)/.test(normalized)
+      ? "walkable"
+      : "any";
   const avoidChain = /(チェーン|スタバ|スターバックス|上島|ドトール|タリーズ).*(避け|いや|以外|除く)|((避けたい|苦手|いや).*(チェーン|スタバ|スターバックス|上島|ドトール|タリーズ))/.test(
     normalized,
   );
@@ -200,6 +216,7 @@ export function parseIntentRuleBased(input: string): ParsedIntent {
     wantsWorkFriendly: tags.has("study"),
     wantsCoffeeStand,
     wantsInstagram,
+    distancePreference,
     keywords: [...keywords],
     summary: normalized || "自由が丘のコーヒー候補を探す",
     interpretationMode: "rule_based",
@@ -243,9 +260,12 @@ async function requestGeminiIntent(input: string): Promise<GeminiIntentPayload> 
                   "Set wants_bean_store true only when the user clearly wants beans, roasting, or bean purchase.",
                   "Set wants_coffee_stand true only when they clearly want a stand or quick takeaway style.",
                   "Set wants_instagram true only when they ask for Instagram or social accounts.",
+                  "distance_preference must be one of any, walkable, near_station.",
+                  "Use near_station for requests like station-near, quick access, very close, or a few minutes from the station.",
+                  "Use walkable for requests that accept a short walk.",
                   "Keep summary short Japanese text.",
                   `Input: ${input}`,
-                  'JSON shape: {"must_have_tags":[],"nice_to_have_tags":[],"avoid_tags":[],"wants_coffee_stand":false,"wants_bean_store":false,"wants_instagram":false,"summary":"","notes":[],"keywords":[]}',
+                  'JSON shape: {"must_have_tags":[],"nice_to_have_tags":[],"avoid_tags":[],"wants_coffee_stand":false,"wants_bean_store":false,"wants_instagram":false,"distance_preference":"any","summary":"","notes":[],"keywords":[]}',
                 ].join("\n"),
               },
             ],
@@ -289,6 +309,8 @@ function buildGeminiIntent(input: string, payload: GeminiIntentPayload): ParsedI
   const wantsBeanStore = payload.wants_bean_store ?? fallback.wantsBeanStore;
   const wantsCoffeeStand = payload.wants_coffee_stand ?? fallback.wantsCoffeeStand;
   const wantsInstagram = payload.wants_instagram ?? fallback.wantsInstagram;
+  const distancePreference =
+    normalizeDistancePreference(payload.distance_preference) ?? fallback.distancePreference;
   const vibeNotes = uniqueStrings([...fallback.vibeNotes, ...(payload.notes ?? [])]);
   const keywords = uniqueStrings([...fallback.keywords, ...(payload.keywords ?? [])]);
 
@@ -321,6 +343,7 @@ function buildGeminiIntent(input: string, payload: GeminiIntentPayload): ParsedI
     wantsWorkFriendly: completedMustHaveTags.includes("study") || completedNiceToHaveTags.includes("study"),
     wantsCoffeeStand,
     wantsInstagram,
+    distancePreference,
     keywords,
     summary: payload.summary?.trim() || normalized || fallback.summary,
     interpretationMode: "gemini",

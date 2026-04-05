@@ -18,6 +18,7 @@ export type PlaceSource = "curated";
 export type VenueCategory = "coffee_shop" | "coffee_stand" | "bean_store" | "both";
 
 export type RecommendationMode = "gis_rule_based";
+export type DistancePreference = "any" | "walkable" | "near_station";
 
 export type SearchCenter = {
   id?: string;
@@ -41,6 +42,7 @@ export type ParsedIntent = {
   wantsWorkFriendly: boolean;
   wantsCoffeeStand: boolean;
   wantsInstagram: boolean;
+  distancePreference: DistancePreference;
   keywords: string[];
   summary?: string;
   interpretationMode: "rule_based" | "gemini";

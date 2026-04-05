@@ -207,9 +207,9 @@ export const mockPlaces: Place[] = [
     instagramUrl: "https://www.instagram.com/cafe_skoll/",
     source: "curated",
     category: "coffee_shop",
-    tags: ["study", "quiet", "cozy", "atmosphere"],
-    description: "自由が丘中心から少し南にあり、作業と一人時間の両方に寄せやすい候補。",
-    semanticReasons: ["自由が丘1丁目の実在住所を確認", "作業利用と相性", "落ち着いて過ごしやすい"],
+    tags: ["quiet", "cozy", "atmosphere"],
+    description: "自由が丘中心から少し南にあり、食事やスイーツと一緒にゆっくり過ごしやすいカフェ寄りの候補。",
+    semanticReasons: ["自由が丘1丁目の実在住所を確認", "カフェ利用に向く", "落ち着いて過ごしやすい"],
   },
   {
     id: "curated-ebony",
