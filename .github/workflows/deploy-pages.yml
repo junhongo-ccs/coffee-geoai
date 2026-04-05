@@ -37,7 +37,9 @@ jobs:
         run: npm ci --include=dev
 
       - name: Build
-        run: npm run build
+        run: |
+          npm exec -- tsc
+          npm exec -- vite build
         env:
           NODE_ENV: development
           VITE_ARCGIS_API_KEY: ${{ secrets.VITE_ARCGIS_API_KEY }}
