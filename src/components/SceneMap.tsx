@@ -11,6 +11,8 @@ const searchAreaSourceId = "search-area";
 const centerSourceId = "search-center";
 const placesSourceId = "places";
 const selectedPlaceSourceId = "selected-place";
+const defaultMapPitch = 18;
+const defaultMapBearing = -8;
 
 type SceneMapProps = {
   center: SearchCenter;
@@ -125,6 +127,8 @@ export default function SceneMap({
       style: maptilerStyleUrl,
       center: [center.longitude, center.latitude],
       zoom: 14.6,
+      pitch: defaultMapPitch,
+      bearing: defaultMapBearing,
       attributionControl: false,
     });
 
@@ -290,6 +294,8 @@ export default function SceneMap({
     map.flyTo({
       center: [selectedPlace.longitude, selectedPlace.latitude],
       zoom: Math.max(map.getZoom(), 16.6),
+      pitch: defaultMapPitch,
+      bearing: defaultMapBearing,
       essential: true,
       duration: 700,
     });
@@ -305,6 +311,8 @@ export default function SceneMap({
     map.flyTo({
       center: [center.longitude, center.latitude],
       zoom: 14.6,
+      pitch: defaultMapPitch,
+      bearing: defaultMapBearing,
       essential: true,
       duration: 700,
     });
