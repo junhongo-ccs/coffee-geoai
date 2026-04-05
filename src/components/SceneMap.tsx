@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import maplibregl, { type GeoJSONSource, type Map as MapLibreMap, type Popup } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { Feature, FeatureCollection, Point, Polygon } from "geojson";
-import type { Place, SearchCenter } from "../types";
+import type { Place, PlaceTag, SearchCenter, VenueCategory } from "../types";
 
 const maptilerStyleUrl =
   "https://api.maptiler.com/maps/019d5416-0d77-78fe-81fd-6294e4529535/style.json?key=mK0X0kOgNXHBP5rR1pu9";
@@ -76,6 +76,51 @@ function circlePolygon(center: SearchCenter): Feature<Polygon> {
   };
 }
 
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function categoryLabel(category: VenueCategory): string {
+  if (category === "both") {
+    return "CAFE + BEANS";
+  }
+
+  if (category === "coffee_stand") {
+    return "COFFEE STAND";
+  }
+
+  if (category === "bean_store") {
+    return "BEAN STORE";
+  }
+
+  return "COFFEE SHOP";
+}
+
+function tagLabel(tag: PlaceTag): string {
+  const labels: Record<PlaceTag, string> = {
+    quiet: "静か",
+    cozy: "居心地",
+    atmosphere: "雰囲気",
+    study: "作業向き",
+    specialty: "スペシャルティ",
+    roastery: "ロースター",
+    kissaten: "喫茶店",
+    chain: "チェーン",
+    beans_only: "豆専門",
+    spacious: "広さ",
+    sweet: "スイーツ",
+    morning: "朝向き",
+    terrace: "テラス",
+  };
+
+  return labels[tag];
+}
+
 function placeCollection(places: Place[]): FeatureCollection<Point> {
   return {
     type: "FeatureCollection",
@@ -84,8 +129,10 @@ function placeCollection(places: Place[]): FeatureCollection<Point> {
         placeId: place.id,
         name: place.name,
         address: place.address,
+        category: place.category,
+        tagLabels: place.tags.slice(0, 3).map((tag) => tagLabel(tag)).join(" / "),
+        description: place.description,
         spatialReason: place.spatialReason ?? "",
-        whyThisPlace: (place.whyThisPlace ?? []).join(" / "),
       }),
     ),
   };
@@ -185,8 +232,8 @@ export default function SceneMap({
         type: "circle",
         source: placesSourceId,
         paint: {
-          "circle-radius": 6,
-          "circle-color": "#111827",
+          "circle-radius": 9,
+          "circle-color": "#996947",
           "circle-stroke-color": "#ffffff",
           "circle-stroke-width": 2,
         },
@@ -234,10 +281,18 @@ export default function SceneMap({
           .setHTML(
             `
               <div style="min-width:220px">
-                <div style="font-weight:700;color:#111827;margin-bottom:6px">${properties.name ?? ""}</div>
-                <div style="font-size:12px;line-height:1.6;color:#57534e">${properties.address ?? ""}</div>
-                <div style="margin-top:8px;font-size:12px;line-height:1.6;color:#0f766e">${properties.spatialReason ?? ""}</div>
-                <div style="margin-top:6px;font-size:12px;line-height:1.6;color:#57534e">${properties.whyThisPlace ?? ""}</div>
+                <div style="display:inline-flex;border:1px solid #d8c4b0;background:#f3e7d8;color:#5b3a26;border-radius:999px;padding:4px 10px;font-size:11px;font-weight:700;letter-spacing:0.12em;margin-bottom:10px">
+                  ${escapeHtml(categoryLabel((properties.category as VenueCategory | undefined) ?? "coffee_shop"))}
+                </div>
+                <div style="font-weight:700;color:#111827;margin-bottom:8px;font-size:18px;line-height:1.4">${escapeHtml(String(properties.name ?? ""))}</div>
+                <div style="font-size:12px;line-height:1.7;color:#57534e">${escapeHtml(String(properties.address ?? ""))}</div>
+                ${
+                  properties.tagLabels
+                    ? `<div style="margin-top:10px;font-size:12px;line-height:1.6;color:#57534e">${escapeHtml(String(properties.tagLabels))}</div>`
+                    : ""
+                }
+                <div style="margin-top:10px;font-size:12px;line-height:1.6;color:#57534e">${escapeHtml(String(properties.description ?? ""))}</div>
+                <div style="margin-top:10px;font-size:12px;line-height:1.6;color:#0f766e;font-weight:600">${escapeHtml(String(properties.spatialReason ?? ""))}</div>
               </div>
             `,
           )

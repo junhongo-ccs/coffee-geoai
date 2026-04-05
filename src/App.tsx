@@ -139,15 +139,15 @@ export default function App() {
   return (
     <div className="h-screen overflow-hidden bg-[radial-gradient(circle_at_top,_rgba(245,158,11,0.18),_transparent_32%),linear-gradient(135deg,_#f5f1e8_0%,_#f7f7f5_45%,_#e8f0ee_100%)] text-stone-900">
       <div className="mx-auto flex h-screen max-w-[1920px] min-w-0 flex-col px-6 py-5">
-        <header className="mb-4 flex min-w-0 items-center gap-6 overflow-hidden rounded-[18px] border border-amber-950/20 bg-[linear-gradient(135deg,_rgba(90,58,38,0.96)_0%,_rgba(62,39,26,0.95)_52%,_rgba(42,27,20,0.96)_100%)] px-5 py-3 shadow-[0_20px_80px_rgba(62,39,26,0.24)] backdrop-blur">
+        <header className="mb-4 flex min-w-0 items-center gap-6 overflow-hidden rounded-[18px] border border-[#8d6a52]/35 bg-[linear-gradient(135deg,_rgba(103,74,54,0.96)_0%,_rgba(129,95,70,0.95)_52%,_rgba(160,121,91,0.96)_100%)] px-5 py-3 shadow-[0_20px_80px_rgba(91,58,38,0.2)] backdrop-blur">
           <button
             type="button"
             onClick={handleResetToCenter}
-            className="cursor-pointer text-[11px] font-semibold uppercase tracking-[0.32em] text-white transition hover:text-amber-100"
+            className="cursor-pointer text-[11px] font-semibold uppercase tracking-[0.32em] text-white transition hover:text-[#f8efe6]"
           >
             Jiyugaoka Coffee Recommendation
           </button>
-          <div className="h-4 w-px bg-white/20" />
+          <div className="h-4 w-px bg-white/22" />
           <div className="flex min-w-0 flex-wrap items-center gap-5 text-sm text-stone-100">
             <StatusItem label="Scope" value="自由が丘・奥沢・九品仏" />
             <StatusItem label="Results" value={showAllPoints ? "All Points" : "Top 10"} />
@@ -361,7 +361,7 @@ export default function App() {
 function StatusItem({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center gap-2">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/60">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/65">
         {label}
       </p>
       <p className="text-sm font-semibold text-white">{value}</p>
