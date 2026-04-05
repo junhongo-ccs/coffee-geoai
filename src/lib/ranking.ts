@@ -59,6 +59,7 @@ export function rankPlaces(
       }
 
       if (place.category === "bean_store") {
+        score += intent.wantsBeanStore ? 8 : 0;
         whyThisPlace.push("豆購入目的にも対応できる候補");
       } else if (place.category === "coffee_stand") {
         score += intent.wantsCoffeeStand ? 10 : 4;

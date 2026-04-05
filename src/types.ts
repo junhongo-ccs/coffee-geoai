@@ -31,6 +31,7 @@ export type ParsedIntent = {
   tags: PlaceTag[];
   vibeNotes: string[];
   wantsRoastery: boolean;
+  wantsBeanStore: boolean;
   wantsWorkFriendly: boolean;
   wantsCoffeeStand: boolean;
   wantsInstagram: boolean;

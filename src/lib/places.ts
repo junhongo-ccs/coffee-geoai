@@ -57,6 +57,10 @@ function toScopedPlace(place: Place, center: SearchCenter, intent: ParsedIntent)
     return null;
   }
 
+  if (place.category === "bean_store" && !intent.wantsBeanStore) {
+    return null;
+  }
+
   return {
     ...place,
     isWithinSearchArea: true,

@@ -69,6 +69,7 @@ export function parseIntent(input: string): ParsedIntent {
   const tags = new Set<PlaceTag>();
   const notes = new Set<string>();
   const keywords = new Set<string>(["coffee shop", "cafe"]);
+  const wantsBeanStore = /(豆|焙煎|ロースタ|浅煎り|深煎り)/.test(normalized);
   const wantsCoffeeStand = /(コーヒースタンド|スタンド|ふらっと|サクッと|気軽|テイクアウト|持ち帰り)/i.test(
     normalized,
   );
@@ -96,6 +97,7 @@ export function parseIntent(input: string): ParsedIntent {
     tags: [...tags],
     vibeNotes: [...notes],
     wantsRoastery: tags.has("roastery"),
+    wantsBeanStore,
     wantsWorkFriendly: tags.has("study"),
     wantsCoffeeStand,
     wantsInstagram,
