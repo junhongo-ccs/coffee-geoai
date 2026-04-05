@@ -13,6 +13,7 @@ const placesSourceId = "places";
 const selectedPlaceSourceId = "selected-place";
 const defaultMapPitch = 18;
 const defaultMapBearing = -8;
+const defaultMapZoom = 15.2;
 
 type SceneMapProps = {
   center: SearchCenter;
@@ -126,7 +127,7 @@ export default function SceneMap({
       container: containerRef.current,
       style: maptilerStyleUrl,
       center: [center.longitude, center.latitude],
-      zoom: 14.6,
+      zoom: defaultMapZoom,
       pitch: defaultMapPitch,
       bearing: defaultMapBearing,
       attributionControl: false,
@@ -310,7 +311,7 @@ export default function SceneMap({
     popupRef.current?.remove();
     map.flyTo({
       center: [center.longitude, center.latitude],
-      zoom: 14.6,
+      zoom: defaultMapZoom,
       pitch: defaultMapPitch,
       bearing: defaultMapBearing,
       essential: true,
