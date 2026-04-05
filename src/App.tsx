@@ -7,6 +7,18 @@ import type { ParsedIntent, Place, SearchCenter, VenueCategory } from "./types";
 
 const SceneMap = lazy(() => import("./components/SceneMap"));
 
+function isCardReasonVisible(reason: string): boolean {
+  if (reason === "自由が丘の対象範囲内に収まる") {
+    return false;
+  }
+
+  if (reason.includes("志向に合致")) {
+    return false;
+  }
+
+  return true;
+}
+
 export default function App() {
   const [draftQuery, setDraftQuery] = useState("");
   const [submittedQuery, setSubmittedQuery] = useState("");
@@ -310,14 +322,17 @@ export default function App() {
                         ))}
                       </div>
                       <div className="mt-2.5 grid gap-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-                        {(place.whyThisPlace ?? []).slice(0, 2).map((reason) => (
+                        {(place.whyThisPlace ?? [])
+                          .filter(isCardReasonVisible)
+                          .slice(0, 2)
+                          .map((reason) => (
                           <div
                             key={`${place.id}-${reason}`}
                             className="rounded-[16px] bg-stone-50 px-3 py-2 text-xs leading-5 text-stone-600"
                           >
                             {reason}
                           </div>
-                        ))}
+                          ))}
                       </div>
                       <p className="mt-2.5 text-sm leading-6 text-stone-700">{place.description}</p>
                       <p className="mt-1.5 text-xs font-medium uppercase tracking-[0.2em] text-teal-700">
