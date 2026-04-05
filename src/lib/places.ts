@@ -8,7 +8,7 @@ export const jiyugaokaCenter: SearchCenter = {
   latitude: 35.6074,
   longitude: 139.6688,
   label: "自由が丘駅",
-  radiusMeters: 1400,
+  radiusMeters: 950,
   ward: "目黒区",
 };
 
