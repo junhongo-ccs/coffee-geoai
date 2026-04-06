@@ -39,6 +39,12 @@ const allowedTags: PlaceTag[] = [
 
 const rules: IntentRule[] = [
   {
+    pattern: /(気軽|ふらっと|サクッと|ちょっと寄りたい|軽く一杯|立ち寄りたい)/,
+    tags: ["morning", "atmosphere"],
+    notes: ["短時間の立ち寄りやすさを重視"],
+    keywords: ["quick coffee", "takeaway friendly", "casual stop"],
+  },
+  {
     pattern: /(静か|落ち着|ゆっくり|ひとり|読書)/,
     tags: ["quiet", "cozy"],
     notes: ["静かさを重視"],
@@ -170,7 +176,7 @@ export function parseIntentRuleBased(input: string): ParsedIntent {
   const keywords = new Set<string>(["coffee shop", "cafe"]);
   const wantsBeanStore = /(豆|焙煎|ロースタ|浅煎り|深煎り)/.test(normalized);
   const wantsBeansOnly = /(豆だけ|豆専門|焙煎豆専門|飲まずに豆|豆を買いたいだけ)/.test(normalized);
-  const wantsCoffeeStand = /(コーヒースタンド|スタンド|ふらっと|サクッと|気軽|テイクアウト|持ち帰り)/i.test(
+  const wantsCoffeeStand = /(コーヒースタンド|スタンド|テイクアウト|持ち帰り)/i.test(
     normalized,
   );
   const wantsInstagram = /(インスタ|instagram|Instagram|ig\b|SNS)/i.test(normalized);
@@ -267,6 +273,9 @@ async function requestGeminiIntent(input: string): Promise<GeminiIntentPayload> 
                   "Use beans_only only when they explicitly want bean-only specialty shops and do not need a drink.",
                   "Set wants_bean_store true only when the user clearly wants beans, roasting, or bean purchase.",
                   "Set wants_coffee_stand true only when they clearly want a stand or quick takeaway style.",
+                  'Interpret Japanese requests like "気軽に立ち寄りたい", "ふらっと", "サクッと", or "軽く一杯" as a quick-stop intent.',
+                  "For quick-stop intent, prefer coffee stands or small easy-to-enter shops over large stay-oriented cafes.",
+                  "For quick-stop intent, avoid overemphasizing study, spacious, or long-stay signals unless the user explicitly asks for them.",
                   "Set wants_instagram true only when they ask for Instagram or social accounts.",
                   "Set wants_all_points true when the user wants to see every spot, all stores, or the full list.",
                   "distance_preference must be one of any, walkable, near_station.",

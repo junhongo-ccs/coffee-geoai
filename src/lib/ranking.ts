@@ -44,6 +44,10 @@ export function rankPlaces(
   intent: ParsedIntent,
   center: { latitude: number; longitude: number },
 ): Place[] {
+  const wantsQuickStop = /(気軽|ふらっと|サクッと|ちょっと寄りたい|軽く一杯|立ち寄りたい)/.test(
+    intent.normalized,
+  );
+
   return places
     .map((place) => {
       const distanceMeters = calculateDistanceMeters(
@@ -71,6 +75,28 @@ export function rankPlaces(
       } else if (place.category === "both") {
         score += 6;
         whyThisPlace.push("カフェ利用と豆購入の両方に対応");
+      }
+
+      if (wantsQuickStop) {
+        const quickStopSignals = [
+          place.description,
+          ...place.semanticReasons,
+          place.name,
+        ].join(" ");
+        const hasQuickStopSignal =
+          /(小さ|立ち寄り|短時間|入りやす|テイクアウト|軽い滞在|気軽)/.test(quickStopSignals);
+
+        if (place.category === "coffee_stand") {
+          score += 18;
+          whyThisPlace.push("短時間で立ち寄りやすい");
+        } else if (hasQuickStopSignal) {
+          score += 10;
+          whyThisPlace.push("気軽な一杯に向く小回りのよい店");
+        }
+
+        if (place.tags.includes("spacious") || place.tags.includes("study")) {
+          score -= 8;
+        }
       }
 
       for (const tag of intent.mustHaveTags) {
