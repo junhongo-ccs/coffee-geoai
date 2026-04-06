@@ -160,7 +160,10 @@ export default function App() {
           </button>
           <div className="h-4 w-px bg-white/22" />
           <div className="flex min-w-0 flex-wrap items-center gap-5 text-sm text-stone-100">
-            <StatusItem label="Data" value="ホンゴウ厳選30スポットを完全網羅" />
+            <StatusItem
+              label="表示情報"
+              value="ホンゴウ厳選30スポットを完全網羅（ロード時は駅チカ１０件を表示）！"
+            />
           </div>
         </header>
 
