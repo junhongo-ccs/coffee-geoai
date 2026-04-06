@@ -160,10 +160,7 @@ export default function App() {
           </button>
           <div className="h-4 w-px bg-white/22" />
           <div className="flex min-w-0 flex-wrap items-center gap-5 text-sm text-stone-100">
-            <StatusItem
-              label="表示情報"
-              value="ホンゴウ厳選30スポットを完全網羅（ロード時は駅チカ１０件を表示）！"
-            />
+            <StatusItem value="ホンゴウ厳選30スポットを完全網羅（ロード時は駅チカ１０件を表示）！" />
           </div>
         </header>
 
@@ -325,12 +322,14 @@ export default function App() {
   );
 }
 
-function StatusItem({ label, value }: { label: string; value: string }) {
+function StatusItem({ label, value }: { label?: string; value: string }) {
   return (
     <div className="flex items-center gap-2">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/65">
-        {label}
-      </p>
+      {label ? (
+        <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/65">
+          {label}
+        </p>
+      ) : null}
       <p className="text-sm font-semibold text-white">{value}</p>
     </div>
   );
