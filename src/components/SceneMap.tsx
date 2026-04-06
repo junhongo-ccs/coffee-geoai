@@ -179,7 +179,7 @@ function popupHtml(place: Place, popupTagLabels: string[]): string {
           ? `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">${popupTagLabels
               .map(
                 (label) =>
-                  `<span style="display:inline-flex;align-items:center;border:1px solid #d6d3d1;background:#f5f5f4;color:#44403c;border-radius:999px;padding:4px 10px;font-size:11px;font-weight:600;line-height:1.2">${escapeHtml(String(label))}</span>`,
+                  `<span style="display:inline-flex;align-items:center;border:1px solid #d6d3d1;background:#f5f5f4;color:#44403c;border-radius:999px;padding:3px 8px;font-size:10px;font-weight:600;line-height:1.15">${escapeHtml(String(label))}</span>`,
               )
               .join("")}</div>`
           : ""
@@ -231,10 +231,10 @@ export default function SceneMap({
       return;
     }
 
-    const popupTagLabels =
-      place.matchedTags && place.matchedTags.length > 0
-        ? place.matchedTags.map((tag) => tagLabel(tag))
-        : place.tags.slice(0, 3).map((tag) => tagLabel(tag));
+    const prioritizedTags = place.matchedTags && place.matchedTags.length > 0 ? place.matchedTags : [];
+    const supplementalTags = place.tags.filter((tag) => !prioritizedTags.includes(tag));
+    const popupTagLabels = [...prioritizedTags, ...supplementalTags]
+      .map((tag) => tagLabel(tag));
 
     popupRef.current?.remove();
     popupRef.current = new maplibregl.Popup({
