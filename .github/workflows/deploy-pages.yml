@@ -45,7 +45,6 @@ jobs:
           node ./node_modules/typescript/bin/tsc --version
           node ./node_modules/vite/bin/vite.js build
         env:
-          VITE_ARCGIS_API_KEY: ${{ secrets.VITE_ARCGIS_API_KEY }}
           VITE_GEMINI_API_KEY: ${{ secrets.VITE_GEMINI_API_KEY }}
           VITE_GEMINI_MODEL: ${{ vars.VITE_GEMINI_MODEL != '' && vars.VITE_GEMINI_MODEL || 'gemini-2.5-flash' }}
 

@@ -1,418 +1,168 @@
-import type { Place } from "../types";
+import csvRaw from "./coffee  map - coffee-map-spots.csv?raw";
+import type { Place, PlaceTag, VenueCategory } from "../types";
 
-export const mockPlaces: Place[] = [
-  {
-    id: "curated-amber",
-    name: "amber",
-    latitude: 35.6065625,
-    longitude: 139.6668125,
-    address: "東京都世田谷区奥沢5-42-3 トレインチ自由が丘 2F",
-    instagramHandle: "@amber_jiyugaoka",
-    instagramUrl: "https://www.instagram.com/amber_jiyugaoka/",
-    source: "curated",
-    category: "coffee_shop",
-    tags: ["specialty", "quiet", "atmosphere", "cozy", "study"],
-    description: "自由が丘の定番スペシャルティコーヒー店。店内でも作業している人が多く、隣棟の SHARE LOUNGE を時間利用できる点も含めて作業導線が取りやすい。",
-    semanticReasons: ["奥沢5丁目の実在住所を確認", "作業利用が見られる", "コーヒーの質が高い"],
-  },
-  {
-    id: "curated-onnibus",
-    name: "ONIBUS COFFEE 自由が丘店",
-    latitude: 35.6085625,
-    longitude: 139.6718125,
-    address: "東京都目黒区緑が丘2-24-8 arbre自由が丘",
-    instagramHandle: "@onibuscoffee",
-    instagramUrl: "https://www.instagram.com/onibuscoffee/",
-    source: "curated",
-    category: "coffee_shop",
-    tags: ["quiet", "study", "specialty", "morning"],
-    description: "朝の一杯や軽い作業に寄せやすい、自由が丘駅近のスペシャルティ系カフェ。",
-    semanticReasons: ["駅から近い", "朝利用に向く", "作業しやすい雰囲気"],
-  },
-  {
-    id: "curated-compass-kuhonbutsu",
-    name: "コンパスコーヒー 九品仏店",
-    latitude: 35.6044375,
-    longitude: 139.6613125,
-    address: "東京都世田谷区奥沢6-13-7",
-    instagramHandle: "@compass_coffee_/",
-    instagramUrl: "https://www.instagram.com/compass_coffee_/",
-    source: "curated",
-    category: "both",
-    tags: ["roastery", "specialty", "quiet", "cozy"],
-    description: "九品仏駅近くで豆選びと店内利用の両方に寄せやすい、ロースト志向のコーヒー店。",
-    semanticReasons: ["九品仏駅周辺をカバー", "豆購入と喫茶の両立", "ロースター志向"],
-  },
-  {
-    id: "curated-aranciato",
-    name: "Cafe Aranciato",
-    latitude: 35.6031875,
-    longitude: 139.6718125,
-    address: "東京都世田谷区奥沢4-27-16",
-    instagramHandle: "@cafe_aranciato",
-    instagramUrl: "https://www.instagram.com/cafe_aranciato/",
-    source: "curated",
-    category: "both",
-    tags: ["quiet", "cozy", "roastery", "specialty"],
-    description: "奥沢側で落ち着いて過ごしやすく、コーヒー豆販売にも寄せられるロースターカフェ。",
-    semanticReasons: ["奥沢駅周辺をカバー", "静かに過ごしやすい", "豆販売にも対応"],
-  },
-  {
-    id: "curated-chanoko",
-    name: "CHANOKO COFFEE ROASTERY",
-    latitude: 35.6055625,
-    longitude: 139.6715625,
-    address: "東京都世田谷区奥沢2-12-6 平井ビル1F",
-    instagramHandle: "@chanoko_coffee_roastery",
-    instagramUrl: "https://www.instagram.com/chanoko_coffee_roastery/",
-    source: "curated",
-    category: "both",
-    tags: ["roastery", "specialty", "quiet", "cozy"],
-    description: "奥沢神社近くの小さなロースタリーカフェ。豆販売もあり、一人で静かに過ごしたい入力と相性が良い。",
-    semanticReasons: ["奥沢駅徒歩圏", "ロースター文脈が強い", "静かな滞在向き"],
-  },
-  {
-    id: "curated-ueshima-okusawa",
-    name: "上島珈琲店 奥沢店",
-    latitude: 35.6058125,
-    longitude: 139.6715625,
-    address: "東京都世田谷区奥沢2-12-10 自由が丘サウスヒルズ",
-    instagramHandle: "@ueshimacoffeeten",
-    instagramUrl: "https://www.instagram.com/ueshimacoffeeten/",
-    source: "curated",
-    category: "coffee_shop",
-    tags: ["study", "spacious", "cozy", "morning", "chain"],
-    description: "奥沢2丁目で席数があり、作業や勉強の受け皿として使いやすい定番カフェ。",
-    semanticReasons: ["奥沢2丁目の実在住所を確認", "作業・勉強利用がしやすい", "席数を取りやすい"],
-  },
-  {
-    id: "curated-starbucks-okusawa-2",
-    name: "スターバックス コーヒー 奥沢2丁目店",
-    latitude: 35.6068,
-    longitude: 139.6769,
-    address: "東京都世田谷区奥沢2丁目38-9",
-    instagramHandle: "starbucks-2",
-    instagramUrl: "https://www.instagram.com/explore/locations/377928782604825/starbucks-2/",
-    source: "curated",
-    category: "coffee_shop",
-    tags: ["study", "spacious", "atmosphere", "specialty", "chain"],
-    description: "チェーン店ながら価格帯がやや上で、木材を多用したリラックスでモダンな空間が特徴の奥沢側候補。",
-    semanticReasons: ["奥沢2丁目の実在住所を確認", "作業や勉強の受け皿になりやすい", "モダンで落ち着いた雰囲気"],
-  },
-  {
-    id: "curated-sunset",
-    name: "Sunset Coffee Jiyugaoka",
-    latitude: 35.6093125,
-    longitude: 139.6684375,
-    address: "東京都目黒区自由が丘1-26-14 オクミズビル1F",
-    instagramHandle: "@sunsetcoffee_jiyugaokaroastery/",
-    instagramUrl: "https://www.instagram.com/sunsetcoffee_jiyugaokaroastery/",
-    source: "curated",
-    category: "coffee_stand",
-    tags: ["roastery", "specialty", "morning", "atmosphere"],
-    description: "自由が丘駅近の小さなコーヒースタンドで、短時間の一杯やテイクアウトに寄せやすい候補。",
-    semanticReasons: ["自由が丘1丁目の実在住所を確認", "小さなコーヒースタンド", "駅から近い"],
-  },
-  {
-    id: "curated-alpha-beta",
-    name: "アルファ・ベータ・コーヒー・クラブ 自由が丘駅前店",
-    latitude: 35.6081875,
-    longitude: 139.6680625,
-    address: "東京都目黒区自由が丘2-10-4 ミルシェ自由が丘 3F",
-    instagramHandle: "@abccoffeeclubjiyugaoka",
-    instagramUrl: "https://www.instagram.com/abccoffeeclubjiyugaoka/",
-    source: "curated",
-    category: "coffee_shop",
-    tags: ["study", "spacious", "specialty", "atmosphere", "quiet"],
-    description: "自由が丘駅前で入りやすく、PC を開いて作業している人も多い、作業利用の受け皿になりやすい候補。",
-    semanticReasons: ["自由が丘駅前店の実在住所を確認", "PC 作業利用が見られる", "駅から近く入りやすい"],
-  },
-  {
-    id: "curated-kissa20",
-    name: "喫茶二十世紀",
-    latitude: 35.6090625,
-    longitude: 139.6658125,
-    address: "東京都目黒区自由が丘2-16-19",
-    instagramHandle: "@kissa20official",
-    instagramUrl: "https://www.instagram.com/kissa20official/",
-    source: "curated",
-    category: "coffee_shop",
-    tags: ["quiet", "cozy", "atmosphere", "sweet", "kissaten"],
-    description: "喫茶店寄りの落ち着いた時間を取りたいときに向く候補。",
-    semanticReasons: ["自由が丘2丁目の実在住所を確認", "静かさ重視と相性", "喫茶文脈が強い"],
-  },
-  {
-    id: "curated-crossing",
-    name: "クロッシング コーヒーロースターズ",
-    latitude: 35.6096875,
-    longitude: 139.6701875,
-    address: "東京都目黒区自由が丘1-14-1 Gタワー 1F",
-    instagramHandle: "@crossing_coffee_roasters",
-    instagramUrl: "https://www.instagram.com/crossingcoffeeroastery/",
-    source: "curated",
-    category: "both",
-    tags: ["roastery", "specialty", "morning", "quiet"],
-    description: "焙煎文脈が強く、豆も見たい入力に寄せやすいロースター系候補。",
-    semanticReasons: ["自由が丘1丁目の実在住所を確認", "豆購入にも寄せやすい", "ロースター志向"],
-  },
-  {
-    id: "curated-la-boheme",
-    name: "カフェ ラ・ボエム 自由が丘",
-    latitude: 35.6083125,
-    longitude: 139.6709375,
-    address: "東京都目黒区自由が丘1-4-8 1F・2F",
-    instagramHandle: "@boheme_jiyugaoka",
-    instagramUrl: "https://www.instagram.com/boheme_jiyugaoka/",
-    source: "curated",
-    category: "coffee_shop",
-    tags: ["spacious", "atmosphere", "sweet", "morning", "chain"],
-    description: "席数と入りやすさがあり、会話や軽い滞在の受け皿になりやすい大型店。",
-    semanticReasons: ["自由が丘1丁目の実在住所を確認", "席に余裕がある", "雰囲気重視に対応"],
-  },
-  {
-    id: "curated-the-jiyugaoka",
-    name: "the;自由が丘",
-    latitude: 35.6085625,
-    longitude: 139.6723125,
-    address: "東京都目黒区緑が丘2-17-12 T'S BRIGHTIA自由が丘 102号",
-    instagramHandle: "@the_jiyugaoka",
-    instagramUrl: "https://www.instagram.com/the_jiyugaoka/",
-    source: "curated",
-    category: "coffee_shop",
-    tags: ["atmosphere", "cozy", "quiet", "specialty"],
-    description: "緑が丘寄りで、空間の雰囲気と静かな時間を取りにいくときの候補。",
-    semanticReasons: ["緑が丘2丁目の実在住所を確認", "雰囲気重視に合う", "静かな滞在向き"],
-  },
-  {
-    id: "curated-slow-stand",
-    name: "Slow Standard Coffee",
-    latitude: 35.6075625,
-    longitude: 139.6759375,
-    address: "東京都世田谷区奥沢2-46-6 自由が丘apartment 102",
-    instagramHandle: "@slow_standard_coffee",
-    instagramUrl: "https://www.instagram.com/slow_standard_coffee/",
-    source: "curated",
-    category: "both",
-    tags: ["morning", "specialty", "roastery", "cozy", "quiet", "atmosphere"],
-    description: "奥沢2丁目で落ち着いて過ごしやすく、焙煎や豆販売の文脈でも拾えるスペシャルティ候補。",
-    semanticReasons: ["奥沢2丁目の実在住所を確認", "豆販売にも寄せられる", "落ち着いた空気感がある"],
-  },
-  {
-    id: "curated-cafe-skoll",
-    name: "Cafe Skoll",
-    latitude: 35.6073125,
-    longitude: 139.6691875,
-    address: "東京都目黒区自由が丘1-9-6 オハナビル 2F",
-    instagramHandle: "＠cafe_skoll",
-    instagramUrl: "https://www.instagram.com/cafe_skoll/",
-    source: "curated",
-    category: "coffee_shop",
-    tags: ["quiet", "cozy", "atmosphere"],
-    description: "自由が丘中心から少し南にあり、食事やスイーツと一緒にゆっくり過ごしやすいカフェ寄りの候補。",
-    semanticReasons: ["自由が丘1丁目の実在住所を確認", "カフェ利用に向く", "落ち着いて過ごしやすい"],
-  },
-  {
-    id: "curated-ebony",
-    name: "EBONY COFFEE",
-    latitude: 35.6053125,
-    longitude: 139.6640625,
-    address: "東京都世田谷区奥沢6-28-4 ワイズニール自由ヶ丘 1F",
-    source: "curated",
-    category: "bean_store",
-    tags: ["specialty", "roastery", "beans_only"],
-    description: "店内提供やテイクアウトを行わない、焙煎豆専門のロースター。",
-    semanticReasons: ["奥沢6丁目の実在住所を確認", "焙煎豆専門", "店内提供なしの豆販売専門店"],
-  },
-  {
-    id: "curated-stamp",
-    name: "STAMP COFFEE / スタンプコーヒー",
-    latitude: 35.6046875,
-    longitude: 139.6678125,
-    address: "東京都世田谷区奥沢5-31-20",
-    instagramHandle: "@stamp_coffee_",
-    instagramUrl: "https://www.instagram.com/stamp_coffee_",
-    source: "curated",
-    category: "coffee_stand",
-    tags: ["specialty", "morning", "cozy", "atmosphere"],
-    description: "九品仏南東側で、朝や軽い滞在に向くスタンド寄りの候補。",
-    semanticReasons: ["奥沢5丁目の実在住所を確認", "朝利用に向く", "立ち寄りやすい"],
-  },
-  {
-    id: "curated-miyachi-shoten",
-    name: "ミヤチ商店",
-    latitude: 35.6036875,
-    longitude: 139.6711875,
-    address: "東京都世田谷区奥沢5-1-4",
-    instagramHandle: "@shop_miyachi",
-    instagramUrl: "https://www.instagram.com/shop_miyachi/",
-    source: "curated",
-    category: "coffee_stand",
-    tags: ["morning", "cozy", "quiet", "specialty"],
-    description: "奥沢5丁目の小さなコーヒースタンドで、朝の一杯や短時間の立ち寄りに寄せやすい候補。",
-    semanticReasons: ["奥沢5丁目の実在住所を確認", "小さなコーヒースタンド", "朝利用に向く"],
-  },
-  {
-    id: "curated-utakata",
-    name: "UTAKATA COFFEE",
-    latitude: 35.6031,
-    longitude: 139.6737,
-    address: "東京都世田谷区奥沢5-14-31 クレインI 101",
-    instagramHandle: "@utakata_coffee",
-    instagramUrl: "https://www.instagram.com/utakata_coffee/",
-    source: "curated",
-    category: "coffee_shop",
-    tags: ["atmosphere", "cozy", "quiet", "specialty"],
-    description: "奥沢南東側で、雰囲気重視や静かな時間に寄せやすいコーヒー候補。",
-    semanticReasons: ["奥沢5丁目の実在住所を確認", "雰囲気重視と相性", "静かな時間に向く"],
-  },
-  {
-    id: "curated-enseigne-angle",
-    name: "カフェ・アンセーニュ・ダングル 自由が丘店",
-    latitude: 35.6080411,
-    longitude: 139.6702441,
-    address: "東京都目黒区自由が丘1-13-6 鳥井ビル1F",
-    source: "curated",
-    category: "coffee_shop",
-    tags: ["quiet", "cozy", "specialty", "atmosphere", "kissaten"],
-    description: "クラシカルな喫茶店文脈が強く、静かな会話や落ち着いた一杯を重視する入力に向く。",
-    semanticReasons: ["喫茶文脈が明確", "静けさ重視と相性", "自由が丘駅徒歩圏"],
-  },
-  {
-    id: "curated-mamocafe",
-    name: "Specialtycoffee&Food mamocafe",
-    latitude: 35.6081,
-    longitude: 139.6788,
-    address: "東京都目黒区緑が丘2-4-5",
-    instagramHandle: "@mamo.cafe",
-    instagramUrl: "https://www.instagram.com/mamo.cafe/",
-    source: "curated",
-    category: "coffee_shop",
-    tags: ["specialty", "cozy", "quiet", "sweet"],
-    description: "小さめの落ち着いた空気感で、スペシャルティ寄りの一杯を取りたいときの候補。",
-    semanticReasons: ["緑が丘2丁目の実在住所を確認", "スペシャルティ志向", "静かに過ごしやすい"],
-  },
-  {
-    id: "curated-latte-graphic",
-    name: "LATTE GRAPHIC 自由が丘店",
-    latitude: 35.6069375,
-    longitude: 139.6688125,
-    address: "東京都目黒区自由が丘1-8-18 自由が丘ノーブル 2F",
-    instagramHandle: "@lattegraphic",
-    instagramUrl: "https://www.instagram.com/lattegraphic/",
-    source: "curated",
-    category: "coffee_shop",
-    tags: ["spacious", "study", "morning", "atmosphere", "chain"],
-    description: "比較的入りやすく、会話や軽い作業の受け皿にもなりやすい大型寄りの候補。",
-    semanticReasons: ["自由が丘1丁目の実在住所を確認", "席の余裕を取りやすい", "作業利用と相性"],
-  },
-  {
-    id: "curated-cafe-mozart",
-    name: "カフェ モーツァルト 自由が丘店",
-    latitude: 35.6082,
-    longitude: 139.6752,
-    address: "東京都目黒区自由が丘1-8-2 サウスゲートビル 2F",
-    source: "curated",
-    category: "coffee_shop",
-    tags: ["cozy", "sweet", "atmosphere", "quiet", "kissaten"],
-    description: "コーヒーとケーキのセット需要が強く、喫茶店ベクトルでゆっくり過ごしたいときに向く候補。",
-    semanticReasons: ["自由が丘1丁目の実在住所を確認", "ケーキセット需要が強い", "喫茶寄りの滞在に向く"],
-  },
-  {
-    id: "curated-usubane",
-    name: "usubane",
-    latitude: 35.6071875,
-    longitude: 139.6674375,
-    address: "東京都目黒区自由が丘2-12-19 B1",
-    instagramHandle: "@usubane_jiyugaoka",
-    instagramUrl: "https://www.instagram.com/usubane_jiyugaoka/",
-    source: "curated",
-    category: "coffee_shop",
-    tags: ["quiet", "cozy", "atmosphere", "specialty"],
-    description: "自由が丘西側で、雰囲気と静かな時間を重視したい入力に寄せやすい候補。",
-    semanticReasons: ["自由が丘2丁目の実在住所を確認", "静かに過ごしやすい", "雰囲気重視と相性"],
-  },
-  {
-    id: "curated-royal-crystal",
-    name: "ロイヤルクリスタルコーヒー",
-    latitude: 35.6084375,
-    longitude: 139.6670625,
-    address: "東京都目黒区自由が丘2-16-3",
-    instagramHandle: "@royalcrystalcoffee.cafe",
-    instagramUrl: "https://www.instagram.com/royalcrystalcoffee.cafe/",
-    source: "curated",
-    category: "coffee_shop",
-    tags: ["quiet", "cozy", "atmosphere", "sweet", "kissaten"],
-    description: "落ち着いてゆっくり飲む方向に寄せやすい、クラシック寄りのコーヒー候補。",
-    semanticReasons: ["自由が丘2丁目の実在住所を確認", "ゆっくり過ごしやすい", "喫茶寄りの雰囲気"],
-  },
-  {
-    id: "curated-stillpark",
-    name: "STILLPARK",
-    latitude: 35.5999375,
-    longitude: 139.6689375,
-    address: "東京都世田谷区奥沢4-5-4",
-    instagramHandle: "@stillpark_coffee",
-    instagramUrl: "https://www.instagram.com/stillpark_coffee/",
-    source: "curated",
-    category: "coffee_shop",
-    tags: ["cozy", "quiet", "atmosphere", "morning"],
-    description: "奥沢4丁目の小さめのコーヒーショップで、静かな時間を取りたいときに寄せやすい候補。",
-    semanticReasons: ["奥沢4丁目の実在住所を確認", "小規模で落ち着いた雰囲気", "静かな滞在向き"],
-  },
-  {
-    id: "curated-relief-coffee-stand",
-    name: "Relief coffee stand",
-    latitude: 35.5998125,
-    longitude: 139.6698125,
-    address: "東京都世田谷区奥沢4-4-7 スカイハイツ奥沢 1F",
-    instagramHandle: "@relief_coffee_stand",
-    instagramUrl: "https://www.instagram.com/relief_coffee_stand/",
-    source: "curated",
-    category: "coffee_stand",
-    tags: ["morning", "specialty", "cozy", "quiet"],
-    description: "奥沢4丁目の小さなコーヒースタンドで、朝の一杯や短時間利用に寄せやすい候補。",
-    semanticReasons: ["奥沢4丁目の実在住所を確認", "小さなコーヒースタンド", "朝利用に向く"],
-  },
-  {
-    id: "curated-la-cialda",
-    name: "La Cialda -自由が丘カフェ-",
-    latitude: 35.6095625,
-    longitude: 139.6688125,
-    address: "東京都目黒区自由が丘1-25-9 1F",
-    instagramHandle: "@cialda_jiyugaoka",
-    instagramUrl: "https://www.instagram.com/cialda_jiyugaoka/",
-    source: "curated",
-    category: "coffee_shop",
-    tags: ["cozy", "atmosphere", "sweet", "morning"],
-    description: "自由が丘1丁目で入りやすく、軽食や一杯を気軽に取りたいときに寄せやすい候補。",
-    semanticReasons: ["自由が丘1丁目の実在住所を確認", "入りやすいカフェ文脈", "軽い滞在と相性"],
-  },
-  {
-    id: "curated-chilt",
-    name: "CHILT CAFESTAND & CRAFT",
-    latitude: 35.6075625,
-    longitude: 139.6646875,
-    address: "東京都世田谷区奥沢7-6-10",
-    instagramHandle: "@chilt_cafe.craft/",
-    instagramUrl: "https://www.instagram.com/chilt_cafe.craft/",
-    source: "curated",
-    category: "coffee_shop",
-    tags: ["atmosphere", "cozy", "quiet", "specialty"],
-    description: "九品仏から奥沢寄りの南側で、雰囲気重視や一人時間に寄せやすい候補。",
-    semanticReasons: ["奥沢7丁目の実在住所を確認", "静かな時間に向く", "雰囲気重視と相性"],
-  },
-  {
-    id: "curated-radio-plant",
-    name: "ラジオプラント",
-    latitude: 35.6064375,
-    longitude: 139.6650625,
-    address: "東京都世田谷区奥沢7-7-21 Casa Abierta 1階",
-    instagramHandle: "@cafe-radioplant",
-    instagramUrl: "https://jiyugaoka.net/cafe-radioplant",
-    source: "curated",
-    category: "coffee_shop",
-    tags: ["quiet", "cozy", "atmosphere", "sweet", "kissaten"],
-    description: "静かなジャズが流れる店内で、つい長居したくなるような居心地のよさがある喫茶寄りの候補。",
-    semanticReasons: ["奥沢7丁目の実在住所を確認", "静かなジャズと相性の良い空気感", "ゆっくり長居しやすい"],
-  },
+const placeTags: PlaceTag[] = [
+  "quiet",
+  "cozy",
+  "atmosphere",
+  "study",
+  "specialty",
+  "roastery",
+  "kissaten",
+  "chain",
+  "beans_only",
+  "spacious",
+  "sweet",
+  "morning",
+  "terrace",
 ];
+
+const placeTagSet = new Set(placeTags);
+const venueCategorySet = new Set<VenueCategory>(["coffee_shop", "coffee_stand", "bean_store", "both"]);
+
+type CsvRow = Record<string, string>;
+
+function parseCsv(text: string): string[][] {
+  const rows: string[][] = [];
+  let row: string[] = [];
+  let current = "";
+  let inQuotes = false;
+
+  for (let i = 0; i < text.length; i += 1) {
+    const char = text[i];
+
+    if (char === '"') {
+      const next = text[i + 1];
+      if (inQuotes && next === '"') {
+        current += '"';
+        i += 1;
+      } else {
+        inQuotes = !inQuotes;
+      }
+      continue;
+    }
+
+    if (char === "," && !inQuotes) {
+      row.push(current);
+      current = "";
+      continue;
+    }
+
+    if ((char === "\n" || char === "\r") && !inQuotes) {
+      if (char === "\r" && text[i + 1] === "\n") {
+        i += 1;
+      }
+
+      row.push(current);
+      if (row.length > 1 || row[0] !== "") {
+        rows.push(row);
+      }
+      row = [];
+      current = "";
+      continue;
+    }
+
+    current += char;
+  }
+
+  if (current.length > 0 || row.length > 0) {
+    row.push(current);
+    rows.push(row);
+  }
+
+  return rows;
+}
+
+function toCsvRows(text: string): CsvRow[] {
+  const parsed = parseCsv(text);
+  if (parsed.length === 0) {
+    return [];
+  }
+
+  const [rawHeaders, ...rawRows] = parsed;
+  const headers = rawHeaders.map((header) => header.trim());
+
+  return rawRows.map((values) => {
+    const row: CsvRow = {};
+    for (let i = 0; i < headers.length; i += 1) {
+      row[headers[i]] = (values[i] ?? "").trim();
+    }
+    return row;
+  });
+}
+
+function toOptionalString(value: string | undefined): string | undefined {
+  const normalized = value?.trim() ?? "";
+  return normalized === "" ? undefined : normalized;
+}
+
+function toNumber(value: string | undefined): number | null {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function isPlaceTag(value: string): value is PlaceTag {
+  return placeTagSet.has(value as PlaceTag);
+}
+
+function toTags(value: string | undefined): PlaceTag[] {
+  const raw = value?.trim() ?? "";
+  if (!raw) {
+    return [];
+  }
+
+  return raw
+    .split(/[|｜]/)
+    .map((tag) => tag.trim())
+    .filter((tag): tag is PlaceTag => isPlaceTag(tag));
+}
+
+function toSemanticReasons(value: string | undefined): string[] {
+  const raw = value?.trim() ?? "";
+  if (!raw) {
+    return [];
+  }
+
+  return raw
+    .split(/[|｜]/)
+    .map((reason) => reason.trim())
+    .filter((reason) => reason.length > 0);
+}
+
+function toCategory(value: string | undefined): VenueCategory {
+  const normalized = value?.trim() ?? "";
+  return venueCategorySet.has(normalized as VenueCategory)
+    ? (normalized as VenueCategory)
+    : "coffee_shop";
+}
+
+function toPlace(row: CsvRow): Place | null {
+  const id = row.id?.trim() ?? "";
+  const name = row.name?.trim() ?? "";
+  const latitude = toNumber(row.latitude);
+  const longitude = toNumber(row.longitude);
+
+  if (!id || !name || latitude === null || longitude === null) {
+    return null;
+  }
+
+  return {
+    id,
+    name,
+    latitude,
+    longitude,
+    address: row.address?.trim() ?? "",
+    instagramHandle: toOptionalString(row.instagram_handle),
+    instagramUrl: toOptionalString(row.instagram_url),
+    source: "curated",
+    category: toCategory(row.category),
+    tags: toTags(row.tags),
+    description: row.description?.trim() ?? "",
+    semanticReasons: toSemanticReasons(row.semantic_reasons),
+  };
+}
+
+// Source of truth for user-facing spot descriptions is the CSV file.
+export const mockPlaces: Place[] = toCsvRows(csvRaw)
+  .map((row) => toPlace(row))
+  .filter((place): place is Place => place !== null);

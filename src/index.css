@@ -40,3 +40,11 @@ textarea {
 .maplibregl-canvas-container {
   overflow: hidden;
 }
+
+.jiyugaoka-map-popup .maplibregl-popup-content,
+.jiyugaoka-map-popup.maplibregl-popup-anchor-top-left .maplibregl-popup-content,
+.jiyugaoka-map-popup.maplibregl-popup-anchor-top-right .maplibregl-popup-content,
+.jiyugaoka-map-popup.maplibregl-popup-anchor-bottom-left .maplibregl-popup-content,
+.jiyugaoka-map-popup.maplibregl-popup-anchor-bottom-right .maplibregl-popup-content {
+  border-radius: 24px !important;
+}

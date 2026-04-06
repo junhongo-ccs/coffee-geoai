@@ -1,5 +1,5 @@
 {
-  "name": "coffee-geoai",
+  "name": "coffee-map",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -24,3 +24,4 @@
     "react-dom": "^19.2.4"
   }
 }
+

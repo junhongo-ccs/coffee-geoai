@@ -62,6 +62,7 @@ export type Place = {
   isWithinSearchArea?: boolean;
   distanceMeters?: number;
   tags: PlaceTag[];
+  matchedTags?: PlaceTag[];
   description: string;
   semanticReasons: string[];
   spatialReason?: string;

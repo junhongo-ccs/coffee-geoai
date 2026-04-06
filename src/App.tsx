@@ -1,23 +1,11 @@
 import { lazy, Suspense, useEffect, useState } from "react";
-import type { KeyboardEvent } from "react";
+import type { ChangeEvent, KeyboardEvent } from "react";
 import { parseIntent } from "./lib/intent";
 import { jiyugaokaCenter, searchNearbyPlaces } from "./lib/places";
 import { rankPlaces, tagLabel } from "./lib/ranking";
 import type { ParsedIntent, Place, SearchCenter, VenueCategory } from "./types";
 
 const SceneMap = lazy(() => import("./components/SceneMap"));
-
-function isCardReasonVisible(reason: string): boolean {
-  if (reason === "自由が丘の対象範囲内に収まる") {
-    return false;
-  }
-
-  if (reason.includes("志向に合致")) {
-    return false;
-  }
-
-  return true;
-}
 
 export default function App() {
   const [draftQuery, setDraftQuery] = useState("");
@@ -36,8 +24,6 @@ export default function App() {
     0,
     showAllPoints ? places.length : 10,
   );
-  const selectedPlace =
-    rankedPlaces.find((place) => place.id === selectedPlaceId) ?? rankedPlaces[0] ?? null;
   const hasQuery = submittedQuery.trim().length > 0;
   const resultSummary = loading
     ? "候補を計算中"
@@ -46,7 +32,7 @@ export default function App() {
         ? `自由が丘エリアの全 ${rankedPlaces.length} 件を表示`
         : hasQuery
         ? `自由が丘で ${rankedPlaces.length} 件の候補を提示`
-        : `自由が丘で ${rankedPlaces.length} 件の候補を表示`
+        : ""
       : "条件に合う候補が見つかりません";
 
   useEffect(() => {
@@ -57,6 +43,10 @@ export default function App() {
       const nextIntent = await parseIntent(submittedQuery);
       const results = await searchNearbyPlaces(center, nextIntent);
       const nextShowAllPoints = nextIntent.wantsAllPoints;
+      const nextRankedPlaces = rankPlaces(results, nextIntent, center).slice(
+        0,
+        nextShowAllPoints ? results.length : 10,
+      );
 
       if (!active) {
         return;
@@ -64,10 +54,13 @@ export default function App() {
 
       setIntent(nextIntent);
       setPlaces(results);
-      setSelectedPlaceId(
-        rankPlaces(results, nextIntent, center)
-          .slice(0, nextShowAllPoints ? results.length : 10)[0]?.id ?? null,
-      );
+      setSelectedPlaceId((current) => {
+        if (!current) {
+          return null;
+        }
+
+        return nextRankedPlaces.some((place) => place.id === current) ? current : null;
+      });
       setLoading(false);
     }
 
@@ -147,10 +140,17 @@ export default function App() {
     handleSubmitSearch();
   }
 
+  function handleDraftChange(event: ChangeEvent<HTMLTextAreaElement>) {
+    const textarea = event.target;
+    textarea.style.height = "auto";
+    textarea.style.height = `${textarea.scrollHeight}px`;
+    setDraftQuery(textarea.value);
+  }
+
   return (
-    <div className="h-screen overflow-hidden bg-[radial-gradient(circle_at_top,_rgba(245,158,11,0.18),_transparent_32%),linear-gradient(135deg,_#f5f1e8_0%,_#f7f7f5_45%,_#e8f0ee_100%)] text-stone-900">
-      <div className="mx-auto flex h-screen max-w-[1920px] min-w-0 flex-col px-6 py-5">
-        <header className="mb-4 flex min-w-0 items-center gap-6 overflow-hidden rounded-[18px] border border-[#8d6a52]/35 bg-[linear-gradient(135deg,_rgba(103,74,54,0.96)_0%,_rgba(129,95,70,0.95)_52%,_rgba(160,121,91,0.96)_100%)] px-5 py-3 shadow-[0_20px_80px_rgba(91,58,38,0.2)] backdrop-blur">
+    <div className="h-dvh overflow-hidden bg-[radial-gradient(circle_at_top,_rgba(245,158,11,0.18),_transparent_32%),linear-gradient(135deg,_#f5f1e8_0%,_#f7f7f5_45%,_#e8f0ee_100%)] text-stone-900">
+      <div className="mx-auto grid h-full max-w-[1920px] min-w-0 grid-rows-[auto_minmax(0,1fr)] gap-4 px-6 py-5">
+        <header className="flex min-w-0 items-center gap-6 overflow-hidden rounded-[18px] border border-[#8d6a52]/35 bg-[linear-gradient(135deg,_rgba(103,74,54,0.96)_0%,_rgba(129,95,70,0.95)_52%,_rgba(160,121,91,0.96)_100%)] px-5 py-3 shadow-[0_20px_80px_rgba(91,58,38,0.2)] backdrop-blur">
           <button
             type="button"
             onClick={handleResetToCenter}
@@ -160,13 +160,11 @@ export default function App() {
           </button>
           <div className="h-4 w-px bg-white/22" />
           <div className="flex min-w-0 flex-wrap items-center gap-5 text-sm text-stone-100">
-            <StatusItem label="Scope" value="自由が丘・奥沢・九品仏" />
-            <StatusItem label="Results" value={showAllPoints ? "All Points" : "Top 10"} />
-            <StatusItem label="Distance" value="自由が丘駅基準" />
+            <StatusItem label="Data" value="ホンゴウ厳選30スポットを完全網羅" />
           </div>
         </header>
 
-        <main className="grid min-h-0 min-w-0 flex-1 gap-4 xl:grid-cols-[460px_minmax(0,1fr)]">
+        <main className="grid min-h-0 min-w-0 gap-4 lg:grid-cols-[420px_minmax(0,1fr)] 2xl:grid-cols-[460px_minmax(0,1fr)]">
           <section className="min-h-0 min-w-0 overflow-y-auto rounded-[30px] border border-white/60 bg-white/78 p-5 shadow-[0_20px_80px_rgba(15,23,42,0.08)] backdrop-blur">
             <div className="space-y-5">
               <div>
@@ -177,21 +175,15 @@ export default function App() {
                   <span className="mb-2 block text-lg font-semibold text-stone-950">
                     自由が丘で、どんなコーヒー体験を探していますか
                   </span>
-                  <span className="mb-3 block text-sm leading-6 text-stone-600">
-                    自然言語で入力してください。入力内容から LLM が意図タグを抽出して、候補の選び方に反映します。
-                  </span>
                   <div className="relative">
                     <textarea
                       value={draftQuery}
-                      onChange={(event) => setDraftQuery(event.target.value)}
+                      onChange={handleDraftChange}
                       onKeyDown={handleQueryKeyDown}
-                      className="min-h-32 w-full rounded-[24px] border border-[#b79376] bg-[#fff] px-4 py-4 text-sm leading-7 text-stone-900 outline-none transition focus:border-[#8d6a52] focus:bg-[#fff] focus:outline-none"
-                      placeholder="例: 静かに過ごせて、豆もちゃんとしている自由が丘の店"
+                      className="min-h-20 w-full overflow-y-hidden rounded-[24px] border border-[#b79376] bg-[#fff] px-4 py-4 text-xs leading-6 text-stone-900 outline-none transition focus:border-[#8d6a52] focus:bg-[#fff] focus:outline-none"
+                      placeholder="自然言語で入力してください。入力内容から LLM が意図タグを抽出して、候補の選び方に反映します。"
                     />
                   </div>
-                  <span className="mt-2 block text-xs leading-5 text-stone-500">
-                    入力を止めると候補を自動更新します。Enter を押すとすぐ反映します。
-                  </span>
                 </label>
                 {draftQuery.trim() ? (
                   <div className="mt-3 rounded-[20px] border border-stone-200/80 bg-white/70 px-4 py-3">
@@ -236,64 +228,35 @@ export default function App() {
               <div>
                 <div className="mb-3 flex items-center justify-between">
                   <p className="text-sm font-semibold text-stone-900">
-                    {showAllPoints ? "All recommendations" : "Top 10 recommendations"}
+                    {showAllPoints ? "All recommendations" : "Recommendations"}
                   </p>
                   <p className="text-xs uppercase tracking-[0.24em] text-stone-500">
                     {loading ? "Loading" : `${rankedPlaces.length} results`}
                   </p>
                 </div>
-                <p className="mb-3 text-sm leading-6 text-stone-600">{resultSummary}</p>
+                {resultSummary ? <p className="mb-3 text-sm leading-6 text-stone-600">{resultSummary}</p> : null}
                 <p className="mb-4 text-xs leading-6 text-stone-500">
                   {hasQuery
                     ? showAllPoints
                       ? "隠しコマンドを検出したため、自由が丘エリアの全ポイントを表示しています。"
-                      : "自由が丘駅からの距離・カテゴリ・意図解釈で順位付けしています。"
+                      : ""
                     : "未入力時も、距離とカテゴリを加味した総合順で 10 件を表示します。"}
                 </p>
-                {hasQuery && intent ? (
-                  <div className="mb-4 rounded-[18px] border border-stone-200 bg-stone-50 px-4 py-3">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-stone-500">
-                      Intent Parse
-                    </p>
-                    {intent.distancePreference !== "any" ? (
-                      <p className="mt-2 text-xs font-medium uppercase tracking-[0.18em] text-teal-700">
-                        距離条件: {distancePreferenceLabel(intent.distancePreference)}
-                      </p>
-                    ) : null}
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {intent.mustHaveTags.map((tag) => (
-                        <Badge key={`must-${tag}`} tone="teal">{`MUST ${tagLabel(tag)}`}</Badge>
-                      ))}
-                      {intent.niceToHaveTags
-                        .filter((tag) => !intent.mustHaveTags.includes(tag))
-                        .map((tag) => (
-                          <Badge key={`nice-${tag}`} tone="slate">
-                            {tagLabel(tag)}
-                          </Badge>
-                        ))}
-                      {intent.avoidTags.map((tag) => (
-                          <Badge key={`avoid-${tag}`} tone="slate">{`AVOID ${tagLabel(tag)}`}</Badge>
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
-
                 <div className="space-y-2.5">
-                  {rankedPlaces.map((place, index) => (
+                  {rankedPlaces.map((place) => (
                     <button
                       key={place.id}
                       type="button"
                       onClick={() => setSelectedPlaceId(place.id)}
                       className={`w-full rounded-[22px] border px-4 py-3.5 text-left transition ${
-                        selectedPlace?.id === place.id
+                        selectedPlaceId === place.id
                           ? "border-amber-500 bg-amber-50 shadow-[0_12px_28px_rgba(245,158,11,0.18)]"
                           : "border-stone-200 bg-white hover:border-stone-300"
                       }`}
                     >
                       <div className="flex items-start gap-3">
                         <div>
-                          <p className="text-xs uppercase tracking-[0.24em] text-stone-400">#{index + 1}</p>
-                          <h2 className="mt-1 text-lg font-semibold text-stone-950">{place.name}</h2>
+                          <h2 className="text-lg font-semibold text-stone-950">{place.name}</h2>
                           <p className="mt-1 text-sm text-stone-600">{place.address}</p>
                           <div className="mt-2 flex flex-wrap gap-2">
                             <Badge tone="coffee">{categoryLabel(place.category)}</Badge>
@@ -321,19 +284,6 @@ export default function App() {
                           </span>
                         ))}
                       </div>
-                      <div className="mt-2.5 grid gap-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-                        {(place.whyThisPlace ?? [])
-                          .filter(isCardReasonVisible)
-                          .slice(0, 2)
-                          .map((reason) => (
-                          <div
-                            key={`${place.id}-${reason}`}
-                            className="rounded-[16px] bg-stone-50 px-3 py-2 text-xs leading-5 text-stone-600"
-                          >
-                            {reason}
-                          </div>
-                          ))}
-                      </div>
                       <p className="mt-2.5 text-sm leading-6 text-stone-700">{place.description}</p>
                       <p className="mt-1.5 text-xs font-medium uppercase tracking-[0.2em] text-teal-700">
                         {place.spatialReason}
@@ -345,7 +295,7 @@ export default function App() {
             </div>
           </section>
 
-          <section className="flex min-h-0 min-w-0">
+          <section className="flex h-full min-h-0 min-w-0">
             <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden rounded-[30px] border border-white/60 bg-white/75 shadow-[0_20px_80px_rgba(15,23,42,0.08)] backdrop-blur">
               <Suspense
                 fallback={
@@ -358,7 +308,7 @@ export default function App() {
                   <SceneMap
                     center={center}
                     places={rankedPlaces}
-                    selectedPlaceId={selectedPlace?.id ?? null}
+                    selectedPlaceId={selectedPlaceId}
                     resetToCenterKey={resetToCenterKey}
                     onSelectPlace={setSelectedPlaceId}
                   />

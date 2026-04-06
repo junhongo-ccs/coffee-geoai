@@ -1,4 +1,4 @@
-# データモデル: 自由が丘 ArcGIS GIS根拠付きコーヒー推薦 PoC
+# データモデル: 自由が丘 GIS根拠付きコーヒー推薦 PoC
 
 ## SearchArea
 
@@ -38,7 +38,7 @@
   - `latitude`: 緯度
   - `longitude`: 経度
   - `address`: 表示用住所
-  - `source`: `arcgis_reference` または `curated`
+  - `source`: `curated` または `manual_reference`
   - `category`: `coffee_shop`、`bean_store`、`both`
   - `tags`: 店舗属性タグ
   - `description`: 短い説明文
@@ -58,7 +58,7 @@
   - `score`: 合計スコア
   - `whyThisPlace`: レビュー担当者向け理由を最大 3 件
   - `rank`: 1 から 3 の順位
-  - `mode`: `gis_rule_based` または `arcgis_reference`
+  - `mode`: `gis_rule_based` または `curated_reference`
 - **検証条件**:
   - 既定表示では最大 3 件まで
   - すべての結果に説明可能な理由があること
@@ -69,8 +69,8 @@
 - **項目**:
   - `id`: 安定したモード識別子
   - `label`: UI 表示名
-  - `usesArcgis`: ArcGIS を使っているか
+  - `usesMap`: 地図表示を使っているか
   - `limitations`: 制約説明
 - **検証条件**:
   - UI 上で見えること
-  - ローカル計算のランキングを ArcGIS 起因であるかのように誇張しないこと
+  - ローカル計算のランキングを外部 AI 起因であるかのように誇張しないこと

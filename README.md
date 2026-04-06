@@ -20,6 +20,7 @@
 - `インスタがあるお店` で Instagram URL がある店舗だけ表示
 - `駅近` のような距離条件を別軸で扱う
 - 左のカードか地図のポイントを押すと、その店を選択
+- 選択中スポットは専用ピンで表示され、ピンを押すと軽量ポップアップを表示
 - ヘッダー左の `JIYUGAOKA COFFEE RECOMMENDATION` を押すと、地図が自由が丘駅中心に戻る
 
 ## 技術スタック
@@ -35,7 +36,8 @@
 ## 現在の前提
 
 - 自然文解釈は Gemini を優先し、失敗時はローカルなルールベースへフォールバックします
-- 店舗データは `src/data/mockPlaces.ts` のキュレーション済みデータです
+- 店舗データの大元は `src/data/coffee  map - coffee-map-spots.csv` です
+- 説明文と理由文の大元も `src/data/coffee  map - coffee-map-spots.csv` です（`description` と `semantic_reasons` はCSVのみ編集）
 - 距離は「自由が丘駅中心からの直線距離」です
 - 対象範囲は自由が丘駅中心の半径 `950m` です
 - 画面は `1920x1080` のデスクトップ表示を基準に調整しています
@@ -104,9 +106,11 @@ GitHub 側では `Settings > Pages > Source` を `GitHub Actions` に設定し�
 - `src/App.tsx`
   - 画面全体、入力欄、`Live Intent Tags`、カード一覧、選択状態の管理
 - `src/components/SceneMap.tsx`
-  - 地図描画、ピン、選択地点への移動、中心リセット、ポップアップ
+  - 地図描画、選択中専用ピン、選択地点への移動、中心リセット、ポップアップ
+- `src/data/coffee  map - coffee-map-spots.csv`
+  - キュレーション済み店舗データの大元
 - `src/data/mockPlaces.ts`
-  - キュレーション済み店舗データ
+  - CSVを `Place[]` に変換する読み込みレイヤー
 - `src/lib/intent.ts`
   - Gemini + ルールベースの自然文解釈
 - `src/lib/places.ts`
@@ -115,6 +119,39 @@ GitHub 側では `Settings > Pages > Source` を `GitHub Actions` に設定し�
   - 距離と意図タグによる順位付け
 - `src/types.ts`
   - 店舗データと意図解釈の型
+
+## Maintenance
+
+普段のメンテで触る場所は次の 4 つです。
+
+- 店舗データ: `src/data/coffee  map - coffee-map-spots.csv`
+- 選択中ピン画像: `public/map-markers/selected-pin.png`
+- OGP 画像: `public/ogp.png`
+- OGP 文言: `index.html`
+
+CSV 運用ルール:
+
+- 店舗の説明文は `description` を編集
+- 理由文は `semantic_reasons` を編集
+- `src/data/mockPlaces.ts` は CSV 読み込み専用として扱い、店舗データ本体は直書きしない
+
+地図アセット運用:
+
+- 選択中ピンは `96 x 96 px` PNG を `48 x 48 px` 表示前提で使う
+- 保存先は `public/map-markers/selected-pin.png`
+- ピン先端が座標に来る前提でデザインする
+
+OGP 運用:
+
+- OGP 画像サイズは `1200 x 630 px`
+- 保存先は `public/ogp.png`
+- OGP / Twitter 文言は `index.html` の `description` / `og:*` / `twitter:*` を揃えて更新する
+
+ローカル確認メモ:
+
+- 開発サーバー: `npm run dev`
+- 本番ビルド確認: `npm run build`
+- 画像や OGP を差し替えた直後はハードリロード推奨
 
 ## Docs
 

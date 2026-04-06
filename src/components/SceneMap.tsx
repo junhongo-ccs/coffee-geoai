@@ -1,5 +1,10 @@
 import { useEffect, useRef } from "react";
-import maplibregl, { type GeoJSONSource, type Map as MapLibreMap, type Popup } from "maplibre-gl";
+import maplibregl, {
+  type GeoJSONSource,
+  type Map as MapLibreMap,
+  type Marker,
+  type Popup,
+} from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { Feature, FeatureCollection, Point, Polygon } from "geojson";
 import type { Place, PlaceTag, SearchCenter, VenueCategory } from "../types";
@@ -8,12 +13,19 @@ const maptilerStyleUrl =
   "https://api.maptiler.com/maps/019d5416-0d77-78fe-81fd-6294e4529535/style.json?key=mK0X0kOgNXHBP5rR1pu9";
 
 const searchAreaSourceId = "search-area";
-const centerSourceId = "search-center";
 const placesSourceId = "places";
-const selectedPlaceSourceId = "selected-place";
+const selectedPinImageUrl = `${import.meta.env.BASE_URL}map-markers/selected-pin.png`;
 const defaultMapPitch = 18;
-const defaultMapBearing = -8;
-const defaultMapZoom = 15.2;
+const defaultMapBearing = 0;
+const defaultMapZoom = 14.6;
+const mapViewportPadding = 28;
+const selectedPinDisplaySize = 48;
+const selectedPopupGap = 4;
+const selectedPopupOffset = {
+  top: [0, selectedPopupGap] as [number, number],
+  bottom: [0, -(selectedPinDisplaySize + selectedPopupGap)] as [number, number],
+};
+const selectedFlyToOffset = [0, selectedPinDisplaySize] as [number, number];
 
 type SceneMapProps = {
   center: SearchCenter;
@@ -29,6 +41,17 @@ function toRadians(value: number): number {
 
 function toDegrees(value: number): number {
   return (value * 180) / Math.PI;
+}
+
+function boundsFromCenter(center: SearchCenter): [[number, number], [number, number]] {
+  const radiusMeters = center.radiusMeters ?? 900;
+  const latDelta = radiusMeters / 111320;
+  const lngDelta = radiusMeters / (111320 * Math.cos(toRadians(center.latitude)));
+
+  return [
+    [center.longitude - lngDelta, center.latitude - latDelta],
+    [center.longitude + lngDelta, center.latitude + latDelta],
+  ];
 }
 
 function pointFeature(longitude: number, latitude: number, properties: Record<string, unknown> = {}): Feature<Point> {
@@ -121,36 +144,71 @@ function tagLabel(tag: PlaceTag): string {
   return labels[tag];
 }
 
-function placeCollection(places: Place[]): FeatureCollection<Point> {
+function placeCollection(places: Place[], selectedPlaceId: string | null): FeatureCollection<Point> {
   return {
     type: "FeatureCollection",
     features: places.map((place) =>
       pointFeature(place.longitude, place.latitude, {
         placeId: place.id,
+        isSelected: place.id === selectedPlaceId,
         name: place.name,
         address: place.address,
         category: place.category,
-        tagLabels: place.tags.slice(0, 3).map((tag) => tagLabel(tag)).join(" / "),
-        description: place.description,
+        tagLabels:
+          place.matchedTags && place.matchedTags.length > 0
+            ? place.matchedTags.map((tag) => tagLabel(tag)).join("|")
+            : place.tags
+                .slice(0, 3)
+                .map((tag) => tagLabel(tag))
+                .join("|"),
         spatialReason: place.spatialReason ?? "",
       }),
     ),
   };
 }
 
-function selectedPlaceCollection(places: Place[], selectedPlaceId: string | null): FeatureCollection<Point> {
-  const selectedPlace = places.find((place) => place.id === selectedPlaceId);
+function popupHtml(place: Place, popupTagLabels: string[]): string {
+  return `
+    <div style="min-width:220px">
+      <div style="display:inline-flex;border:1px solid #d8c4b0;background:#f3e7d8;color:#5b3a26;border-radius:999px;padding:4px 10px;font-size:11px;font-weight:700;letter-spacing:0.12em;margin-bottom:10px">
+        ${escapeHtml(categoryLabel(place.category))}
+      </div>
+      <div style="font-weight:700;color:#111827;margin-bottom:8px;font-size:18px;line-height:1.4">${escapeHtml(place.name)}</div>
+      ${
+        popupTagLabels.length > 0
+          ? `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">${popupTagLabels
+              .map(
+                (label) =>
+                  `<span style="display:inline-flex;align-items:center;border:1px solid #d6d3d1;background:#f5f5f4;color:#44403c;border-radius:999px;padding:4px 10px;font-size:11px;font-weight:600;line-height:1.2">${escapeHtml(String(label))}</span>`,
+              )
+              .join("")}</div>`
+          : ""
+      }
+      <div style="margin-top:8px;font-size:12px;line-height:1.5;color:#0f766e;font-weight:600">${escapeHtml(place.spatialReason ?? "")}</div>
+    </div>
+  `;
+}
 
-  return {
-    type: "FeatureCollection",
-    features: selectedPlace
-      ? [
-          pointFeature(selectedPlace.longitude, selectedPlace.latitude, {
-            placeId: selectedPlace.id,
-          }),
-        ]
-      : [],
-  };
+function createSelectedMarkerElement(): HTMLDivElement {
+  const wrapper = document.createElement("div");
+  wrapper.className = "jiyugaoka-selected-marker";
+  wrapper.style.width = `${selectedPinDisplaySize}px`;
+  wrapper.style.height = `${selectedPinDisplaySize}px`;
+  wrapper.style.pointerEvents = "auto";
+
+  const image = document.createElement("img");
+  image.src = selectedPinImageUrl;
+  image.alt = "";
+  image.width = selectedPinDisplaySize;
+  image.height = selectedPinDisplaySize;
+  image.draggable = false;
+  image.style.width = `${selectedPinDisplaySize}px`;
+  image.style.height = `${selectedPinDisplaySize}px`;
+  image.style.display = "block";
+  image.style.pointerEvents = "none";
+
+  wrapper.append(image);
+  return wrapper;
 }
 
 export default function SceneMap({
@@ -163,7 +221,38 @@ export default function SceneMap({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const popupRef = useRef<Popup | null>(null);
+  const selectedMarkerRef = useRef<Marker | null>(null);
+  const popupPlaceIdRef = useRef<string | null>(null);
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
+
+  function openPlacePopup(place: Place, coordinates: [number, number]) {
+    const map = mapRef.current;
+    if (!map) {
+      return;
+    }
+
+    const popupTagLabels =
+      place.matchedTags && place.matchedTags.length > 0
+        ? place.matchedTags.map((tag) => tagLabel(tag))
+        : place.tags.slice(0, 3).map((tag) => tagLabel(tag));
+
+    popupRef.current?.remove();
+    popupRef.current = new maplibregl.Popup({
+      closeButton: false,
+      closeOnClick: false,
+      anchor: "bottom",
+      offset: selectedPopupOffset.bottom,
+      className: "jiyugaoka-map-popup",
+    })
+      .setLngLat(coordinates)
+      .setHTML(popupHtml(place, popupTagLabels))
+      .addTo(map);
+
+    popupPlaceIdRef.current = place.id;
+    popupRef.current.on("close", () => {
+      popupPlaceIdRef.current = null;
+    });
+  }
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) {
@@ -180,7 +269,7 @@ export default function SceneMap({
       attributionControl: false,
     });
 
-    map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-left");
+    map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "bottom-right");
 
     map.on("load", () => {
       map.addSource(searchAreaSourceId, {
@@ -207,25 +296,9 @@ export default function SceneMap({
         },
       });
 
-      map.addSource(centerSourceId, {
-        type: "geojson",
-        data: pointFeature(center.longitude, center.latitude),
-      });
-      map.addLayer({
-        id: "search-center-layer",
-        type: "circle",
-        source: centerSourceId,
-        paint: {
-          "circle-radius": 7,
-          "circle-color": "#0f766e",
-          "circle-stroke-color": "#f0fdfa",
-          "circle-stroke-width": 3,
-        },
-      });
-
       map.addSource(placesSourceId, {
         type: "geojson",
-        data: placeCollection(places),
+        data: placeCollection(places, selectedPlaceId),
       });
       map.addLayer({
         id: "places-layer",
@@ -233,25 +306,24 @@ export default function SceneMap({
         source: placesSourceId,
         paint: {
           "circle-radius": 9,
-          "circle-color": "#996947",
-          "circle-stroke-color": "#ffffff",
-          "circle-stroke-width": 2,
-        },
-      });
-
-      map.addSource(selectedPlaceSourceId, {
-        type: "geojson",
-        data: selectedPlaceCollection(places, selectedPlaceId),
-      });
-      map.addLayer({
-        id: "selected-place-layer",
-        type: "circle",
-        source: selectedPlaceSourceId,
-        paint: {
-          "circle-radius": 9,
-          "circle-color": "#f97316",
-          "circle-stroke-color": "#ffffff",
-          "circle-stroke-width": 3,
+          "circle-color": [
+            "case",
+            ["boolean", ["get", "isSelected"], false],
+            "rgba(153,105,71,0)",
+            "#996947",
+          ],
+          "circle-stroke-color": [
+            "case",
+            ["boolean", ["get", "isSelected"], false],
+            "rgba(255,255,255,0)",
+            "#ffffff",
+          ],
+          "circle-stroke-width": [
+            "case",
+            ["boolean", ["get", "isSelected"], false],
+            0,
+            2,
+          ],
         },
       });
 
@@ -263,40 +335,19 @@ export default function SceneMap({
 
         const properties = feature.properties ?? {};
         const placeId = properties.placeId;
-
         if (typeof placeId !== "string") {
           return;
         }
 
         onSelectPlace(placeId);
 
+        const place = places.find((candidate) => candidate.id === placeId);
+        if (!place) {
+          return;
+        }
+
         const coordinates = (feature.geometry as Point).coordinates as [number, number];
-        popupRef.current?.remove();
-        popupRef.current = new maplibregl.Popup({
-          closeButton: false,
-          offset: 14,
-          className: "jiyugaoka-map-popup",
-        })
-          .setLngLat(coordinates)
-          .setHTML(
-            `
-              <div style="min-width:220px">
-                <div style="display:inline-flex;border:1px solid #d8c4b0;background:#f3e7d8;color:#5b3a26;border-radius:999px;padding:4px 10px;font-size:11px;font-weight:700;letter-spacing:0.12em;margin-bottom:10px">
-                  ${escapeHtml(categoryLabel((properties.category as VenueCategory | undefined) ?? "coffee_shop"))}
-                </div>
-                <div style="font-weight:700;color:#111827;margin-bottom:8px;font-size:18px;line-height:1.4">${escapeHtml(String(properties.name ?? ""))}</div>
-                <div style="font-size:12px;line-height:1.7;color:#57534e">${escapeHtml(String(properties.address ?? ""))}</div>
-                ${
-                  properties.tagLabels
-                    ? `<div style="margin-top:10px;font-size:12px;line-height:1.6;color:#57534e">${escapeHtml(String(properties.tagLabels))}</div>`
-                    : ""
-                }
-                <div style="margin-top:10px;font-size:12px;line-height:1.6;color:#57534e">${escapeHtml(String(properties.description ?? ""))}</div>
-                <div style="margin-top:10px;font-size:12px;line-height:1.6;color:#0f766e;font-weight:600">${escapeHtml(String(properties.spatialReason ?? ""))}</div>
-              </div>
-            `,
-          )
-          .addTo(map);
+        openPlacePopup(place, coordinates);
       });
 
       map.on("mouseenter", "places-layer", () => {
@@ -304,6 +355,12 @@ export default function SceneMap({
       });
       map.on("mouseleave", "places-layer", () => {
         map.getCanvas().style.cursor = "";
+      });
+
+      map.fitBounds(boundsFromCenter(center), {
+        padding: mapViewportPadding,
+        maxZoom: defaultMapZoom,
+        duration: 0,
       });
     });
 
@@ -315,7 +372,10 @@ export default function SceneMap({
 
     return () => {
       resizeObserverRef.current?.disconnect();
+      selectedMarkerRef.current?.remove();
       popupRef.current?.remove();
+      selectedMarkerRef.current = null;
+      popupPlaceIdRef.current = null;
       map.remove();
       mapRef.current = null;
       popupRef.current = null;
@@ -330,14 +390,40 @@ export default function SceneMap({
     }
 
     (map.getSource(searchAreaSourceId) as GeoJSONSource | undefined)?.setData(circlePolygon(center));
-    (map.getSource(centerSourceId) as GeoJSONSource | undefined)?.setData(
-      pointFeature(center.longitude, center.latitude),
-    );
-    (map.getSource(placesSourceId) as GeoJSONSource | undefined)?.setData(placeCollection(places));
-    (map.getSource(selectedPlaceSourceId) as GeoJSONSource | undefined)?.setData(
-      selectedPlaceCollection(places, selectedPlaceId),
-    );
+    (map.getSource(placesSourceId) as GeoJSONSource | undefined)?.setData(placeCollection(places, selectedPlaceId));
   }, [center, places, selectedPlaceId]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    const selectedPlace = places.find((place) => place.id === selectedPlaceId);
+
+    if (!map) {
+      return;
+    }
+
+    if (!selectedPlace) {
+      selectedMarkerRef.current?.remove();
+      selectedMarkerRef.current = null;
+      return;
+    }
+
+    selectedMarkerRef.current?.remove();
+    const markerElement = createSelectedMarkerElement();
+    markerElement.style.cursor = "pointer";
+    markerElement.addEventListener("click", (event) => {
+      event.stopPropagation();
+      openPlacePopup(selectedPlace, [selectedPlace.longitude, selectedPlace.latitude]);
+    });
+
+    selectedMarkerRef.current = new maplibregl.Marker({
+      element: markerElement,
+      anchor: "bottom",
+    });
+
+    selectedMarkerRef.current
+      .setLngLat([selectedPlace.longitude, selectedPlace.latitude])
+      .addTo(map);
+  }, [places, selectedPlaceId]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -347,8 +433,15 @@ export default function SceneMap({
       return;
     }
 
+    if (popupPlaceIdRef.current && popupPlaceIdRef.current !== selectedPlace.id) {
+      popupRef.current?.remove();
+      popupRef.current = null;
+      popupPlaceIdRef.current = null;
+    }
+
     map.flyTo({
       center: [selectedPlace.longitude, selectedPlace.latitude],
+      offset: selectedFlyToOffset,
       zoom: Math.max(map.getZoom(), 16.6),
       pitch: defaultMapPitch,
       bearing: defaultMapBearing,
@@ -364,15 +457,12 @@ export default function SceneMap({
     }
 
     popupRef.current?.remove();
-    map.flyTo({
-      center: [center.longitude, center.latitude],
-      zoom: defaultMapZoom,
-      pitch: defaultMapPitch,
-      bearing: defaultMapBearing,
-      essential: true,
+    map.fitBounds(boundsFromCenter(center), {
+      padding: mapViewportPadding,
+      maxZoom: defaultMapZoom,
       duration: 700,
     });
   }, [center.latitude, center.longitude, resetToCenterKey]);
 
-  return <div ref={containerRef} className="h-full min-h-[440px] w-full overflow-hidden" />;
+  return <div ref={containerRef} className="h-full min-h-0 w-full overflow-hidden" />;
 }

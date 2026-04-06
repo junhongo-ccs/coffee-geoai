@@ -55,6 +55,7 @@ export function rankPlaces(
 
       let score = 50;
       const whyThisPlace: string[] = [];
+      const matchedTags: Place["matchedTags"] = [];
 
       if (place.isWithinSearchArea) {
         score += 8;
@@ -76,6 +77,7 @@ export function rankPlaces(
         if (place.tags.includes(tag)) {
           score += (tagWeights[tag] ?? 8) + 10;
           whyThisPlace.push(`必須条件の「${tagLabel(tag)}」に合致`);
+          matchedTags.push(tag);
         } else {
           score -= 28;
         }
@@ -85,6 +87,9 @@ export function rankPlaces(
         if (place.tags.includes(tag)) {
           score += tagWeights[tag] ?? 8;
           whyThisPlace.push(`「${tagLabel(tag)}」志向に合致`);
+          if (!matchedTags.includes(tag)) {
+            matchedTags.push(tag);
+          }
         }
       }
 
@@ -133,6 +138,7 @@ export function rankPlaces(
         distanceMeters,
         spatialReason: formatDistance(distanceMeters, place.isWithinSearchArea),
         score,
+        matchedTags,
         whyThisPlace: whyThisPlace.slice(0, 3),
       };
     })
