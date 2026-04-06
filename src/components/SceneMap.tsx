@@ -238,7 +238,7 @@ export default function SceneMap({
 
     popupRef.current?.remove();
     popupRef.current = new maplibregl.Popup({
-      closeButton: false,
+      closeButton: true,
       closeOnClick: false,
       anchor: "bottom",
       offset: selectedPopupOffset.bottom,
@@ -350,6 +350,19 @@ export default function SceneMap({
         openPlacePopup(place, coordinates);
       });
 
+      map.on("click", (event) => {
+        const hitPlace = map.queryRenderedFeatures(event.point, {
+          layers: ["places-layer"],
+        });
+        if (hitPlace.length > 0) {
+          return;
+        }
+
+        popupRef.current?.remove();
+        popupRef.current = null;
+        popupPlaceIdRef.current = null;
+      });
+
       map.on("mouseenter", "places-layer", () => {
         map.getCanvas().style.cursor = "pointer";
       });
@@ -412,6 +425,13 @@ export default function SceneMap({
     markerElement.style.cursor = "pointer";
     markerElement.addEventListener("click", (event) => {
       event.stopPropagation();
+      if (popupPlaceIdRef.current === selectedPlace.id) {
+        popupRef.current?.remove();
+        popupRef.current = null;
+        popupPlaceIdRef.current = null;
+        return;
+      }
+
       openPlacePopup(selectedPlace, [selectedPlace.longitude, selectedPlace.latitude]);
     });
 
