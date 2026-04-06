@@ -282,8 +282,8 @@ export default function SceneMap({
         type: "fill",
         source: searchAreaSourceId,
         paint: {
-          "fill-color": "#0f766e",
-          "fill-opacity": 0.08,
+          "fill-color": "#c8a27d",
+          "fill-opacity": 0.12,
         },
       });
       map.addLayer({
@@ -291,9 +291,8 @@ export default function SceneMap({
         type: "line",
         source: searchAreaSourceId,
         paint: {
-          "line-color": "#0f766e",
           "line-width": 2,
-          "line-opacity": 0.45,
+          "line-opacity": 0,
         },
       });
 
