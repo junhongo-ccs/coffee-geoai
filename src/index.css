@@ -47,4 +47,17 @@ textarea {
 .jiyugaoka-map-popup.maplibregl-popup-anchor-bottom-left .maplibregl-popup-content,
 .jiyugaoka-map-popup.maplibregl-popup-anchor-bottom-right .maplibregl-popup-content {
   border-radius: 24px !important;
+  overflow: hidden;
+}
+
+.jiyugaoka-map-popup .maplibregl-popup-close-button {
+  top: 10px;
+  right: 10px;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #44403c;
+  font-size: 16px;
+  line-height: 24px;
 }

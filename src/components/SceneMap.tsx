@@ -147,23 +147,24 @@ function tagLabel(tag: PlaceTag): string {
 function placeCollection(places: Place[], selectedPlaceId: string | null): FeatureCollection<Point> {
   return {
     type: "FeatureCollection",
-    features: places.map((place) =>
-      pointFeature(place.longitude, place.latitude, {
-        placeId: place.id,
-        isSelected: place.id === selectedPlaceId,
-        name: place.name,
-        address: place.address,
-        category: place.category,
-        tagLabels:
-          place.matchedTags && place.matchedTags.length > 0
-            ? place.matchedTags.map((tag) => tagLabel(tag)).join("|")
-            : place.tags
-                .slice(0, 3)
-                .map((tag) => tagLabel(tag))
-                .join("|"),
-        spatialReason: place.spatialReason ?? "",
-      }),
-    ),
+    features: places
+      .filter((place) => place.id !== selectedPlaceId)
+      .map((place) =>
+        pointFeature(place.longitude, place.latitude, {
+          placeId: place.id,
+          name: place.name,
+          address: place.address,
+          category: place.category,
+          tagLabels:
+            place.matchedTags && place.matchedTags.length > 0
+              ? place.matchedTags.map((tag) => tagLabel(tag)).join("|")
+              : place.tags
+                  .slice(0, 3)
+                  .map((tag) => tagLabel(tag))
+                  .join("|"),
+          spatialReason: place.spatialReason ?? "",
+        }),
+      ),
   };
 }
 
@@ -306,24 +307,9 @@ export default function SceneMap({
         source: placesSourceId,
         paint: {
           "circle-radius": 9,
-          "circle-color": [
-            "case",
-            ["boolean", ["get", "isSelected"], false],
-            "rgba(153,105,71,0)",
-            "#996947",
-          ],
-          "circle-stroke-color": [
-            "case",
-            ["boolean", ["get", "isSelected"], false],
-            "rgba(255,255,255,0)",
-            "#ffffff",
-          ],
-          "circle-stroke-width": [
-            "case",
-            ["boolean", ["get", "isSelected"], false],
-            0,
-            2,
-          ],
+          "circle-color": "#996947",
+          "circle-stroke-color": "#ffffff",
+          "circle-stroke-width": 2,
         },
       });
 
