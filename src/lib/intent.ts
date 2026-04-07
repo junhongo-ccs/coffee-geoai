@@ -28,6 +28,17 @@ type GeminiIntentRequestStatus =
 const geminiIntentCache = new Map<string, ParsedIntent>();
 const geminiIntentInFlight = new Map<string, Promise<ParsedIntent>>();
 
+function logGeminiFallback(reason: string, input: string): void {
+  if (!import.meta.env.DEV || reason === "empty_input") {
+    return;
+  }
+
+  console.warn("[intent] Gemini fallback:", {
+    reason,
+    input,
+  });
+}
+
 const allowedTags: PlaceTag[] = [
   "quiet",
   "cozy",
@@ -485,6 +496,7 @@ export async function parseIntent(input: string): Promise<ParsedIntent> {
       interpretationDetail: result.userMessage,
       interpretationDiagnostic: result.reason,
     };
+    logGeminiFallback(result.reason, normalizedInput);
     return fallbackIntent;
   })();
 
