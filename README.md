@@ -61,6 +61,12 @@ npm install
 npm run dev
 ```
 
+ローカルの Gemini 解釈を有効にしたい場合は、先に `.env.example` を `.env.local` にコピーして設定します。
+
+```bash
+copy .env.example .env.local
+```
+
 ビルド:
 
 ```bash
@@ -73,12 +79,19 @@ npm run build
 npm run preview
 ```
 
-環境変数:
+ローカル環境変数 (`.env.local`):
 
 ```env
 VITE_GEMINI_API_KEY=...
 VITE_GEMINI_MODEL=gemini-2.5-flash
 ```
+
+補足:
+
+- `.env` / `.env.local` は Git 管理されません
+- ローカル確認は `.env.local` を使います
+- GitHub Pages の build は `.github/workflows/deploy-pages.yml` から `secrets.VITE_GEMINI_API_KEY` と `vars.VITE_GEMINI_MODEL` を参照します
+- API キー未設定時は UI 上でルールベースへのフォールバック理由を表示します
 
 ## 地図
 
@@ -96,6 +109,12 @@ VITE_GEMINI_MODEL=gemini-2.5-flash
 - workflow: `.github/workflows/deploy-pages.yml`
 
 GitHub 側では `Settings > Pages > Source` を `GitHub Actions` に設定してください。
+
+Gemini 設定:
+
+- `Settings > Secrets and variables > Actions > Secrets` に `VITE_GEMINI_API_KEY`
+- `Settings > Secrets and variables > Actions > Variables` に `VITE_GEMINI_MODEL` を設定
+- `VITE_GEMINI_MODEL` を省略した場合は `gemini-2.5-flash` を使います
 
 公開先:
 

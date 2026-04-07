@@ -21,6 +21,13 @@ type GeminiIntentPayload = {
   keywords?: string[];
 };
 
+type GeminiIntentRequestStatus =
+  | { ok: true; payload: GeminiIntentPayload }
+  | { ok: false; reason: string };
+
+const geminiIntentCache = new Map<string, ParsedIntent>();
+const geminiIntentInFlight = new Map<string, Promise<ParsedIntent>>();
+
 const allowedTags: PlaceTag[] = [
   "quiet",
   "cozy",
@@ -126,6 +133,32 @@ function normalizeDistancePreference(value: string | undefined): DistancePrefere
   return undefined;
 }
 
+function detectWantsAllPoints(normalized: string): boolean {
+  return (
+    /(全ポイント|全スポット|全店舗|全件)/i.test(normalized) ||
+    /(全部|すべて|全て).*(見たい|見せて|表示|出して)/i.test(normalized) ||
+    /(全部|すべて|全て)の(スポット|店舗|店).*(見たい|見せて|表示|出して)/i.test(normalized)
+  );
+}
+
+function shouldAddDefaultVibeTags(options: {
+  normalized: string;
+  wantsBeanStore: boolean;
+  wantsCoffeeStand: boolean;
+  wantsInstagram: boolean;
+  wantsAllPoints: boolean;
+  distancePreference: DistancePreference;
+}): boolean {
+  return (
+    options.normalized.length > 0 &&
+    !options.wantsBeanStore &&
+    !options.wantsCoffeeStand &&
+    !options.wantsInstagram &&
+    !options.wantsAllPoints &&
+    options.distancePreference === "any"
+  );
+}
+
 function buildIntent(input: string, draft: Partial<ParsedIntent>): ParsedIntent {
   const normalized = input.trim().replace(/\s+/g, " ");
   const mustHaveTags = [...new Set(draft.mustHaveTags ?? [])];
@@ -165,6 +198,7 @@ function buildIntent(input: string, draft: Partial<ParsedIntent>): ParsedIntent 
     keywords,
     summary: draft.summary?.trim() || undefined,
     interpretationMode: draft.interpretationMode ?? "rule_based",
+    interpretationDetail: draft.interpretationDetail,
   };
 }
 
@@ -180,10 +214,7 @@ export function parseIntentRuleBased(input: string): ParsedIntent {
     normalized,
   );
   const wantsInstagram = /(インスタ|instagram|Instagram|ig\b|SNS)/i.test(normalized);
-  const wantsAllPoints =
-    /(全ポイントが見たい|全ポイント|全スポットが見たい|全スポット|全店舗が見たい|全店舗|全部見たい|全件見たい|全部表示|全部見せて|全スポット見せて|全店舗見せて)/i.test(
-      normalized,
-    );
+  const wantsAllPoints = detectWantsAllPoints(normalized);
   const distancePreference = /(駅近|駅から近い|駅チカ|すぐ|徒歩[0-9０-９]+分|近場)/.test(normalized)
     ? "near_station"
     : /(徒歩圏|歩いて|散歩|ぶらぶら|少し歩いても)/.test(normalized)
@@ -203,7 +234,17 @@ export function parseIntentRuleBased(input: string): ParsedIntent {
     rule.keywords?.forEach((keyword) => keywords.add(keyword));
   }
 
-  if (tags.size === 0) {
+  if (
+    tags.size === 0 &&
+    shouldAddDefaultVibeTags({
+      normalized,
+      wantsBeanStore,
+      wantsCoffeeStand,
+      wantsInstagram,
+      wantsAllPoints,
+      distancePreference,
+    })
+  ) {
     tags.add("atmosphere");
     tags.add("cozy");
     notes.add("あいまいな好みを雰囲気重視として解釈");
@@ -294,6 +335,10 @@ async function requestGeminiIntent(input: string): Promise<GeminiIntentPayload> 
   );
 
   if (!response.ok) {
+    if (response.status === 429) {
+      throw new Error("Gemini の利用上限に達しました");
+    }
+
     throw new Error(`gemini failed: ${response.status}`);
   }
 
@@ -312,6 +357,26 @@ async function requestGeminiIntent(input: string): Promise<GeminiIntentPayload> 
   }
 
   return JSON.parse(text) as GeminiIntentPayload;
+}
+
+async function tryRequestGeminiIntent(input: string): Promise<GeminiIntentRequestStatus> {
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY?.trim();
+
+  if (!input.trim()) {
+    return { ok: false, reason: "入力が空です" };
+  }
+
+  if (!apiKey) {
+    return { ok: false, reason: "Gemini API key が未設定です" };
+  }
+
+  try {
+    const payload = await requestGeminiIntent(input);
+    return { ok: true, payload };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Gemini の解釈に失敗しました";
+    return { ok: false, reason: message };
+  }
 }
 
 function buildGeminiIntent(input: string, payload: GeminiIntentPayload): ParsedIntent {
@@ -371,16 +436,51 @@ function buildGeminiIntent(input: string, payload: GeminiIntentPayload): ParsedI
 }
 
 export async function parseIntent(input: string): Promise<ParsedIntent> {
+  const normalizedInput = input.trim().replace(/\s+/g, " ");
   const fallback = parseIntentRuleBased(input);
 
-  if (!input.trim()) {
-    return fallback;
+  if (!normalizedInput) {
+    return {
+      ...fallback,
+      interpretationDetail: "未入力のためルールベース待機中",
+    };
   }
 
+  const cachedIntent = geminiIntentCache.get(normalizedInput);
+  if (cachedIntent) {
+    return cachedIntent;
+  }
+
+  const inFlightIntent = geminiIntentInFlight.get(normalizedInput);
+  if (inFlightIntent) {
+    return inFlightIntent;
+  }
+
+  const nextIntentPromise = (async () => {
+    const result = await tryRequestGeminiIntent(input);
+
+    if (result.ok) {
+      const geminiIntent = {
+        ...buildGeminiIntent(input, result.payload),
+        interpretationDetail: "Gemini で解釈しました",
+      };
+      geminiIntentCache.set(normalizedInput, geminiIntent);
+      return geminiIntent;
+    }
+
+    const fallbackIntent = {
+      ...fallback,
+      interpretationDetail: result.reason,
+    };
+    geminiIntentCache.set(normalizedInput, fallbackIntent);
+    return fallbackIntent;
+  })();
+
+  geminiIntentInFlight.set(normalizedInput, nextIntentPromise);
+
   try {
-    const payload = await requestGeminiIntent(input);
-    return buildGeminiIntent(input, payload);
-  } catch {
-    return fallback;
+    return await nextIntentPromise;
+  } finally {
+    geminiIntentInFlight.delete(normalizedInput);
   }
 }

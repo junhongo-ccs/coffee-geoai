@@ -47,6 +47,7 @@ export type ParsedIntent = {
   keywords: string[];
   summary?: string;
   interpretationMode: "rule_based" | "gemini";
+  interpretationDetail?: string;
 };
 
 export type Place = {

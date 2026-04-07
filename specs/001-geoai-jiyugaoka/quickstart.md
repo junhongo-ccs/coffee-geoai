@@ -7,7 +7,7 @@
 ## セットアップ
 
 1. `npm install` を実行する
-2. 必要なら `.env.example` を `.env` にコピーする
+2. 必要なら `.env.example` を `.env.local` にコピーする
 3. 必要に応じて `VITE_GEMINI_API_KEY` と `VITE_GEMINI_MODEL` を設定する
 4. `npm run dev` を実行する
 

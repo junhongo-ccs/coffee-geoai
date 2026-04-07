@@ -160,7 +160,7 @@ export default function App() {
           </button>
           <div className="h-4 w-px bg-white/22" />
           <div className="flex min-w-0 flex-wrap items-center gap-5 text-sm text-stone-100">
-            <StatusItem value="ホンゴウ厳選30スポットを完全網羅（ロード時は駅チカ１０件を表示）！" />
+            <StatusItem value="ホンゴウ厳選31スポットを完全網羅（ロード時は駅チカ１０件を表示）！" />
           </div>
         </header>
 
@@ -198,6 +198,9 @@ export default function App() {
                     <p className="mt-2 text-sm text-stone-700">
                       {previewIntent?.summary ?? "入力内容を解釈中"}
                     </p>
+                    {!previewLoading && previewIntent?.interpretationDetail ? (
+                      <p className="mt-2 text-xs text-stone-500">{previewIntent.interpretationDetail}</p>
+                    ) : null}
                     {previewIntent && previewIntent.distancePreference !== "any" ? (
                       <p className="mt-2 text-xs font-medium uppercase tracking-[0.18em] text-teal-700">
                         距離条件: {distancePreferenceLabel(previewIntent.distancePreference)}
@@ -392,5 +395,6 @@ function emptyIntent(query: string): ParsedIntent {
     distancePreference: "any",
     keywords: [],
     interpretationMode: "rule_based",
+    interpretationDetail: "未入力のためルールベース待機中",
   };
 }

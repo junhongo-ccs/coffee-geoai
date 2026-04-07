@@ -44,6 +44,15 @@ export function rankPlaces(
   intent: ParsedIntent,
   center: { latitude: number; longitude: number },
 ): Place[] {
+  const isDefaultBrowse =
+    intent.normalized.length === 0 &&
+    intent.mustHaveTags.length === 0 &&
+    intent.niceToHaveTags.length === 0 &&
+    intent.avoidTags.length === 0 &&
+    !intent.wantsBeanStore &&
+    !intent.wantsCoffeeStand &&
+    !intent.wantsInstagram &&
+    !intent.wantsAllPoints;
   const wantsQuickStop = /(気軽|ふらっと|サクッと|ちょっと寄りたい|軽く一杯|立ち寄りたい)/.test(
     intent.normalized,
   );
@@ -60,6 +69,10 @@ export function rankPlaces(
       let score = 50;
       const whyThisPlace: string[] = [];
       const matchedTags: Place["matchedTags"] = [];
+
+      if (isDefaultBrowse) {
+        whyThisPlace.push("未入力時のため駅からの近さを優先");
+      }
 
       if (place.isWithinSearchArea) {
         score += 8;
@@ -159,7 +172,7 @@ export function rankPlaces(
         }
       });
 
-      return {
+      const rankedPlace = {
         ...place,
         distanceMeters,
         spatialReason: formatDistance(distanceMeters, place.isWithinSearchArea),
@@ -167,6 +180,20 @@ export function rankPlaces(
         matchedTags,
         whyThisPlace: whyThisPlace.slice(0, 3),
       };
+
+      if (isDefaultBrowse) {
+        return {
+          ...rankedPlace,
+          score: 100000 - distanceMeters,
+          whyThisPlace: [
+            "未入力時のため駅からの近さを優先",
+            rankedPlace.spatialReason,
+            ...rankedPlace.whyThisPlace.filter((reason) => reason !== "未入力時のため駅からの近さを優先"),
+          ].slice(0, 3),
+        };
+      }
+
+      return rankedPlace;
     })
     .sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
 }

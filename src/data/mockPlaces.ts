@@ -22,6 +22,10 @@ const venueCategorySet = new Set<VenueCategory>(["coffee_shop", "coffee_stand", 
 
 type CsvRow = Record<string, string>;
 
+function stripBom(value: string): string {
+  return value.replace(/^\uFEFF/, "");
+}
+
 function parseCsv(text: string): string[][] {
   const rows: string[][] = [];
   let row: string[] = [];
@@ -80,7 +84,7 @@ function toCsvRows(text: string): CsvRow[] {
   }
 
   const [rawHeaders, ...rawRows] = parsed;
-  const headers = rawHeaders.map((header) => header.trim());
+  const headers = rawHeaders.map((header) => stripBom(header).trim());
 
   return rawRows.map((values) => {
     const row: CsvRow = {};
