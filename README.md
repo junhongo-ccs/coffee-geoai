@@ -15,7 +15,7 @@
 - 自由が丘・奥沢・九品仏エリアのコーヒー店を表示
 - 日本語の自然文から、静かさ・雰囲気・作業向き・喫茶店寄り・ロースター寄り・駅近などを解釈
 - 入力中に `Live Intent Tags` として解釈結果をプレビュー
-- 初期状態では、距離とカテゴリを加味した総合順の `Top 10` を表示
+- 初期状態では、自由が丘駅に近い `10件` を表示
 - `全ポイントが見たい` で全件表示
 - `インスタがあるお店` で Instagram URL がある店舗だけ表示
 - `駅近` のような距離条件を別軸で扱う
@@ -36,10 +36,12 @@
 ## 現在の前提
 
 - 自然文解釈は Gemini を優先し、失敗時はローカルなルールベースへフォールバックします
+- Gemini 未使用時は、UI 上にフォールバック理由を表示します
 - 店舗データの大元は `src/data/coffee  map - coffee-map-spots.csv` です
 - 説明文と理由文の大元も `src/data/coffee  map - coffee-map-spots.csv` です（`description` と `semantic_reasons` はCSVのみ編集）
 - 距離は「自由が丘駅中心からの直線距離」です
 - 対象範囲は自由が丘駅中心の半径 `950m` です
+- 現在の掲載件数は `31件` です
 - 画面は `1920x1080` のデスクトップ表示を基準に調整しています
 
 ## セットアップ
@@ -188,6 +190,7 @@ Spec Kit ベースの仕様整理は `specs/001-geoai-jiyugaoka/` にありま�
 - `docs/working-plan.md`
 - `docs/2026-04-03-handoff.md`
 - `docs/future-instagram-refresh.md`
+- `docs/tag-review-checklist.md`
 
 ## 今後の整理候補
 
