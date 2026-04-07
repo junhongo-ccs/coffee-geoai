@@ -1,6 +1,7 @@
 import type { ParsedIntent, Place } from "../types";
 
 const tagWeights: Record<string, number> = {
+  coffee_stand: 12,
   quiet: 18,
   cozy: 16,
   atmosphere: 16,
@@ -206,6 +207,7 @@ export function formatDistance(distanceMeters: number, _isWithinSearchArea?: boo
 
 export function tagLabel(tag: string): string {
   const labels: Record<string, string> = {
+    coffee_stand: "コーヒースタンド",
     quiet: "静か",
     cozy: "居心地",
     atmosphere: "雰囲気",

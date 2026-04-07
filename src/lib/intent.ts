@@ -23,7 +23,7 @@ type GeminiIntentPayload = {
 
 type GeminiIntentRequestStatus =
   | { ok: true; payload: GeminiIntentPayload }
-  | { ok: false; reason: string };
+  | { ok: false; reason: string; userMessage: string };
 
 const geminiIntentCache = new Map<string, ParsedIntent>();
 const geminiIntentInFlight = new Map<string, Promise<ParsedIntent>>();
@@ -65,15 +65,21 @@ const rules: IntentRule[] = [
   },
   {
     pattern: /(作業|勉強|PC|仕事|電源|Wi-?Fi)/i,
-    tags: ["study", "spacious", "quiet"],
+    tags: ["study", "spacious"],
     notes: ["作業しやすさを重視"],
     keywords: ["work friendly", "study cafe"],
   },
   {
-    pattern: /(喫茶|純喫茶|ケーキセット|ジャズ|長居|ゆったり|クラシック)/,
+    pattern: /(喫茶|純喫茶|ケーキセット|ジャズ|クラシック)/,
     tags: ["quiet", "cozy", "sweet", "atmosphere", "kissaten"],
     notes: ["喫茶店らしい滞在感を重視"],
     keywords: ["kissaten", "cake set", "relaxing cafe"],
+  },
+  {
+    pattern: /(長居|ゆったり|のんびり)/,
+    tags: ["spacious", "cozy"],
+    notes: ["滞在しやすさを重視"],
+    keywords: ["long stay", "spacious seating"],
   },
   {
     pattern: /(豆|焙煎|ロースタ|浅煎り|深煎り|スペシャルティ)/,
@@ -199,6 +205,7 @@ function buildIntent(input: string, draft: Partial<ParsedIntent>): ParsedIntent 
     summary: draft.summary?.trim() || undefined,
     interpretationMode: draft.interpretationMode ?? "rule_based",
     interpretationDetail: draft.interpretationDetail,
+    interpretationDiagnostic: draft.interpretationDiagnostic,
   };
 }
 
@@ -210,9 +217,7 @@ export function parseIntentRuleBased(input: string): ParsedIntent {
   const keywords = new Set<string>(["coffee shop", "cafe"]);
   const wantsBeanStore = /(豆|焙煎|ロースタ|浅煎り|深煎り)/.test(normalized);
   const wantsBeansOnly = /(豆だけ|豆専門|焙煎豆専門|飲まずに豆|豆を買いたいだけ)/.test(normalized);
-  const wantsCoffeeStand = /(コーヒースタンド|スタンド|テイクアウト|持ち帰り)/i.test(
-    normalized,
-  );
+  const wantsCoffeeStand = /(コーヒースタンド|コーヒー屋台|スタンド(がいい|希望|メイン)|テイクアウト中心|持ち帰り中心)/i.test(normalized);
   const wantsInstagram = /(インスタ|instagram|Instagram|ig\b|SNS)/i.test(normalized);
   const wantsAllPoints = detectWantsAllPoints(normalized);
   const distancePreference = /(駅近|駅から近い|駅チカ|すぐ|徒歩[0-9０-９]+分|近場)/.test(normalized)
@@ -322,7 +327,9 @@ async function requestGeminiIntent(input: string): Promise<GeminiIntentPayload> 
                   "distance_preference must be one of any, walkable, near_station.",
                   "Use near_station for requests like station-near, quick access, very close, or a few minutes from the station.",
                   "Use walkable for requests that accept a short walk.",
-                  "Keep summary short Japanese text.",
+                  "summary must be short natural Japanese.",
+                  "Do not copy the input verbatim unless there is no better paraphrase.",
+                  "Never output English in summary.",
                   `Input: ${input}`,
                   'JSON shape: {"must_have_tags":[],"nice_to_have_tags":[],"avoid_tags":[],"wants_coffee_stand":false,"wants_bean_store":false,"wants_instagram":false,"wants_all_points":false,"distance_preference":"any","summary":"","notes":[],"keywords":[]}',
                 ].join("\n"),
@@ -363,11 +370,15 @@ async function tryRequestGeminiIntent(input: string): Promise<GeminiIntentReques
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY?.trim();
 
   if (!input.trim()) {
-    return { ok: false, reason: "入力が空です" };
+    return { ok: false, reason: "入力が空です", userMessage: "入力内容からタグを抽出しました" };
   }
 
   if (!apiKey) {
-    return { ok: false, reason: "Gemini API key が未設定です" };
+    return {
+      ok: false,
+      reason: "Gemini API key が未設定です",
+      userMessage: "入力内容からタグを抽出しました",
+    };
   }
 
   try {
@@ -375,7 +386,7 @@ async function tryRequestGeminiIntent(input: string): Promise<GeminiIntentReques
     return { ok: true, payload };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Gemini の解釈に失敗しました";
-    return { ok: false, reason: message };
+    return { ok: false, reason: message, userMessage: "入力内容からタグを抽出しました" };
   }
 }
 
@@ -443,6 +454,7 @@ export async function parseIntent(input: string): Promise<ParsedIntent> {
     return {
       ...fallback,
       interpretationDetail: "未入力のためルールベース待機中",
+      interpretationDiagnostic: "empty_input",
     };
   }
 
@@ -470,9 +482,9 @@ export async function parseIntent(input: string): Promise<ParsedIntent> {
 
     const fallbackIntent = {
       ...fallback,
-      interpretationDetail: result.reason,
+      interpretationDetail: result.userMessage,
+      interpretationDiagnostic: result.reason,
     };
-    geminiIntentCache.set(normalizedInput, fallbackIntent);
     return fallbackIntent;
   })();
 

@@ -2,6 +2,7 @@ import csvRaw from "./coffee  map - coffee-map-spots.csv?raw";
 import type { Place, PlaceTag, VenueCategory } from "../types";
 
 const placeTags: PlaceTag[] = [
+  "coffee_stand",
   "quiet",
   "cozy",
   "atmosphere",

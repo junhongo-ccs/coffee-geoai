@@ -1,4 +1,5 @@
 export type PlaceTag =
+  | "coffee_stand"
   | "quiet"
   | "cozy"
   | "atmosphere"
@@ -48,6 +49,7 @@ export type ParsedIntent = {
   summary?: string;
   interpretationMode: "rule_based" | "gemini";
   interpretationDetail?: string;
+  interpretationDiagnostic?: string;
 };
 
 export type Place = {

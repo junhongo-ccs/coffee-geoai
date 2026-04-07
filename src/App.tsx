@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useState } from "react";
 import type { ChangeEvent, KeyboardEvent } from "react";
-import { parseIntent } from "./lib/intent";
+import { parseIntent, parseIntentRuleBased } from "./lib/intent";
 import { jiyugaokaCenter, searchNearbyPlaces } from "./lib/places";
 import { rankPlaces, tagLabel } from "./lib/ranking";
 import type { ParsedIntent, Place, SearchCenter, VenueCategory } from "./types";
@@ -17,14 +17,21 @@ export default function App() {
   const [previewLoading, setPreviewLoading] = useState(false);
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [searchPending, setSearchPending] = useState(false);
+  const [searchVersion, setSearchVersion] = useState(0);
   const [resetToCenterKey, setResetToCenterKey] = useState(0);
 
   const showAllPoints = intent?.wantsAllPoints ?? false;
+  const trimmedDraftQuery = draftQuery.trim();
+  const trimmedSubmittedQuery = submittedQuery.trim();
+  const hasQuery = trimmedSubmittedQuery.length > 0;
+  const hasUnsubmittedChanges = trimmedDraftQuery.length > 0 && trimmedDraftQuery !== trimmedSubmittedQuery;
+  const isRunningSearch = loading && searchPending;
+  const canSearch = trimmedDraftQuery.length > 0 && !isRunningSearch;
   const rankedPlaces = rankPlaces(places, intent ?? emptyIntent(submittedQuery), center).slice(
     0,
     showAllPoints ? places.length : 10,
   );
-  const hasQuery = submittedQuery.trim().length > 0;
   const resultSummary = loading
     ? "候補を計算中"
     : rankedPlaces.length > 0
@@ -61,6 +68,7 @@ export default function App() {
 
         return nextRankedPlaces.some((place) => place.id === current) ? current : null;
       });
+      setSearchPending(false);
       setLoading(false);
     }
 
@@ -69,23 +77,7 @@ export default function App() {
     return () => {
       active = false;
     };
-  }, [center, submittedQuery]);
-
-  useEffect(() => {
-    const nextDraft = draftQuery.trim();
-
-    if (!nextDraft || nextDraft === submittedQuery.trim()) {
-      return;
-    }
-
-    const timer = window.setTimeout(() => {
-      setSubmittedQuery(nextDraft);
-    }, 700);
-
-    return () => {
-      window.clearTimeout(timer);
-    };
-  }, [draftQuery, submittedQuery]);
+  }, [center, submittedQuery, searchVersion]);
 
   useEffect(() => {
     const nextDraft = draftQuery.trim();
@@ -102,24 +94,11 @@ export default function App() {
       return;
     }
 
-    let active = true;
-    setPreviewLoading(true);
-
-    const timer = window.setTimeout(() => {
-      void parseIntent(nextDraft).then((nextIntent) => {
-        if (!active) {
-          return;
-        }
-
-        setPreviewIntent(nextIntent);
-        setPreviewLoading(false);
-      });
-    }, 450);
-
-    return () => {
-      active = false;
-      window.clearTimeout(timer);
-    };
+    setPreviewIntent({
+      ...parseIntentRuleBased(nextDraft),
+      interpretationDetail: "入力内容からタグを抽出しました",
+    });
+    setPreviewLoading(false);
   }, [draftQuery, submittedQuery, intent]);
 
   function handleResetToCenter() {
@@ -128,10 +107,20 @@ export default function App() {
   }
 
   function handleSubmitSearch() {
-    setSubmittedQuery(draftQuery.trim());
+    if (!trimmedDraftQuery) {
+      return;
+    }
+
+    setSearchPending(true);
+    setSubmittedQuery(trimmedDraftQuery);
+    setSearchVersion((current) => current + 1);
   }
 
   function handleQueryKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.nativeEvent.isComposing || event.keyCode === 229) {
+      return;
+    }
+
     if (event.key !== "Enter") {
       return;
     }
@@ -168,10 +157,7 @@ export default function App() {
           <section className="min-h-0 min-w-0 overflow-y-auto rounded-[30px] border border-white/60 bg-white/78 p-5 shadow-[0_20px_80px_rgba(15,23,42,0.08)] backdrop-blur">
             <div className="space-y-5">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-stone-500">
-                  Intent Search
-                </p>
-                <label className="mt-3 block">
+                <label className="block">
                   <span className="mb-2 block text-lg font-semibold text-stone-950">
                     自由が丘で、どんなコーヒー体験を探していますか
                   </span>
@@ -181,10 +167,25 @@ export default function App() {
                       onChange={handleDraftChange}
                       onKeyDown={handleQueryKeyDown}
                       className="min-h-20 w-full overflow-y-hidden rounded-[24px] border border-[#b79376] bg-[#fff] px-4 py-4 text-xs leading-6 text-stone-900 outline-none transition focus:border-[#8d6a52] focus:bg-[#fff] focus:outline-none"
-                      placeholder="自然言語で入力してください。入力内容から LLM が意図タグを抽出して、候補の選び方に反映します。"
+                      placeholder="どんなコーヒー体験を探しているか、自然文で入力してください。"
                     />
                   </div>
                 </label>
+                <div className="mt-3 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={handleSubmitSearch}
+                    className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold text-white transition ${
+                      isRunningSearch
+                        ? "border-[#6c4f3d] bg-[#6c4f3d]"
+                        : "border-[#8d6a52] bg-[#8d6a52] hover:bg-[#7a5a45]"
+                    } disabled:cursor-not-allowed disabled:opacity-50`}
+                    disabled={!canSearch}
+                  >
+                    {isRunningSearch ? <span className="h-2 w-2 animate-pulse rounded-full bg-white/90" /> : null}
+                    {isRunningSearch ? "相談中..." : hasUnsubmittedChanges ? "AIに相談する" : "この条件でもう一度相談"}
+                  </button>
+                </div>
                 {draftQuery.trim() ? (
                   <div className="mt-3 rounded-[20px] border border-stone-200/80 bg-white/70 px-4 py-3">
                     <div className="flex items-center justify-between gap-3">
@@ -192,14 +193,20 @@ export default function App() {
                         Live Intent Tags
                       </p>
                       <p className="text-[11px] uppercase tracking-[0.18em] text-stone-400">
-                        {previewLoading ? "Parsing..." : previewIntent?.interpretationMode === "gemini" ? "Gemini" : "Rule Based"}
+                        {previewLoading
+                          ? "解析中"
+                          : previewIntent?.interpretationMode === "gemini"
+                            ? "AI INTERPRETED"
+                            : "PREVIEW"}
                       </p>
                     </div>
-                    <p className="mt-2 text-sm text-stone-700">
-                      {previewIntent?.summary ?? "入力内容を解釈中"}
-                    </p>
-                    {!previewLoading && previewIntent?.interpretationDetail ? (
-                      <p className="mt-2 text-xs text-stone-500">{previewIntent.interpretationDetail}</p>
+                    {shouldShowAiSummary(previewIntent, draftQuery, submittedQuery) ? (
+                      <div className="mt-3 rounded-[18px] border border-amber-200/80 bg-amber-50/80 px-3 py-3">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-amber-700">
+                          AI Interpretation
+                        </p>
+                        <p className="mt-1 text-sm leading-6 text-stone-800">{previewIntent?.summary}</p>
+                      </div>
                     ) : null}
                     {previewIntent && previewIntent.distancePreference !== "any" ? (
                       <p className="mt-2 text-xs font-medium uppercase tracking-[0.18em] text-teal-700">
@@ -207,6 +214,9 @@ export default function App() {
                       </p>
                     ) : null}
                     <div className="mt-3 flex flex-wrap gap-2">
+                      {previewIntent?.wantsCoffeeStand ? (
+                        <Badge tone="slate">コーヒースタンド</Badge>
+                      ) : null}
                       {previewIntent?.mustHaveTags.map((tag) => (
                         <Badge key={`preview-must-${tag}`} tone="teal">{`MUST ${tagLabel(tag)}`}</Badge>
                       ))}
@@ -220,7 +230,10 @@ export default function App() {
                       {previewIntent?.avoidTags.map((tag) => (
                         <Badge key={`preview-avoid-${tag}`} tone="slate">{`AVOID ${tagLabel(tag)}`}</Badge>
                       ))}
-                      {!previewLoading && previewIntent && previewIntent.tags.length === 0 ? (
+                      {!previewLoading &&
+                      previewIntent &&
+                      previewIntent.tags.length === 0 &&
+                      !previewIntent.wantsCoffeeStand ? (
                         <span className="text-xs text-stone-500">まだタグが抽出されていません。</span>
                       ) : null}
                     </div>
@@ -377,6 +390,18 @@ function distancePreferenceLabel(value: ParsedIntent["distancePreference"]): str
   return "指定なし";
 }
 
+function shouldShowAiSummary(
+  intent: ParsedIntent | null,
+  draftQuery: string,
+  submittedQuery: string,
+): boolean {
+  if (!intent || intent.interpretationMode !== "gemini" || !intent.summary?.trim()) {
+    return false;
+  }
+
+  return draftQuery.trim() === submittedQuery.trim();
+}
+
 function emptyIntent(query: string): ParsedIntent {
   return {
     original: query,
@@ -396,5 +421,6 @@ function emptyIntent(query: string): ParsedIntent {
     keywords: [],
     interpretationMode: "rule_based",
     interpretationDetail: "未入力のためルールベース待機中",
+    interpretationDiagnostic: "empty_input",
   };
 }

@@ -71,7 +71,15 @@ npm run dev
 
 ローカルの Gemini 解釈を有効にしたい場合は、先に `.env.example` を `.env.local` にコピーして設定します。
 
+macOS / Linux:
+
 ```bash
+cp .env.example .env.local
+```
+
+Windows (`cmd.exe`):
+
+```bat
 copy .env.example .env.local
 ```
 
@@ -97,7 +105,8 @@ VITE_GEMINI_MODEL=gemini-2.5-flash
 補足:
 
 - `.env` / `.env.local` は Git 管理されません
-- ローカル確認は `.env.local` を使います
+- ローカル開発では `.env.local` を使います
+- 既存の `.env` があっても、新規セットアップや共有手順は `.env.local` を基準にしてください
 - GitHub Pages の build は `.github/workflows/deploy-pages.yml` から `secrets.VITE_GEMINI_API_KEY` と `vars.VITE_GEMINI_MODEL` を参照します
 - API キー未設定時は UI 上でルールベースへのフォールバック理由を表示します
 

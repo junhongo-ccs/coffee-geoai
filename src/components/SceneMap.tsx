@@ -126,6 +126,7 @@ function categoryLabel(category: VenueCategory): string {
 
 function tagLabel(tag: PlaceTag): string {
   const labels: Record<PlaceTag, string> = {
+    coffee_stand: "コーヒースタンド",
     quiet: "静か",
     cozy: "居心地",
     atmosphere: "雰囲気",
